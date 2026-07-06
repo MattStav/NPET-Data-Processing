@@ -1,0 +1,41 @@
+name: Testing pipeline
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v7
+      with:
+        enable-cache: true
+
+    - name: Install dependencies
+      run: |
+        uv sync --group dev
+
+    - name: Test with pytest
+      run: |
+        uv run pytest tests --junitxml=test-results.xml --cov=src --cov-report=xml --cov-report=html
+
+    - name: Upload test report
+      uses: actions/upload-artifact@v4
+      with:
+        name: pytest-report
+        path: test-results.xml
+
+    - name: Upload coverage report
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-report
+        path: |
+          coverage.xml
+          htmlcov/

@@ -1,0 +1,107 @@
+name: Third-party license notices
+
+on:
+  pull_request:
+    branches: [ "master" ]
+    paths:
+      - "pyproject.toml"
+      - "uv.lock"
+      - ".github/workflows/third-party-notices.yml"
+  push:
+    branches: [ "master" ]
+    paths:
+      - "pyproject.toml"
+      - "uv.lock"
+      - ".github/workflows/third-party-notices.yml"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  third-party-notices:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        if: github.event_name == 'pull_request'
+        with:
+          ref: ${{ github.head_ref }}
+
+      - uses: actions/checkout@v4
+        if: github.event_name != 'pull_request'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
+      - name: Install runtime dependencies
+        run: uv sync --no-dev
+
+      - name: Generate license report
+        run: |
+          py=$(uv run python -c "import sys; print(sys.executable)")
+          uvx pip-licenses --python "$py" \
+          --format=plain-vertical \
+          --with-license-file \
+          --ignore-packages=NPET_DP \
+          --no-license-path \
+          --output-file=THIRD_PARTY_NOTICES.txt
+
+      - name: Push straight to the PR branch
+        if: github.event_name == 'pull_request'
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+        run: |
+          if git diff --quiet -- THIRD_PARTY_NOTICES.txt; then
+            echo "THIRD_PARTY_NOTICES.txt is already up to date."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add THIRD_PARTY_NOTICES.txt
+          git commit -m "Update third-party notices"
+          git push origin "HEAD:$HEAD_REF"
+
+      - name: Open a PR for the master branch
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if git diff --quiet -- THIRD_PARTY_NOTICES.txt; then
+            echo "THIRD_PARTY_NOTICES.txt is already up to date."
+            exit 0
+          fi
+
+          branch="update-third-party-notices"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B "$branch"
+          git add THIRD_PARTY_NOTICES.txt
+          git commit -m "Update third-party notices"
+          git push --force origin "$branch"
+
+          existing=$(curl -sS \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/pulls?head=${GITHUB_REPOSITORY%%/*}:${branch}&base=master&state=open" \
+            | jq 'length')
+
+          if [ "$existing" -gt 0 ]; then
+            echo "Open PR already exists for $branch; pushed update, no new PR needed."
+            exit 0
+          fi
+
+          curl -sS -X POST \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/pulls" \
+            -d @- <<EOF
+          {
+            "title": "Update third-party notices",
+            "head": "${branch}",
+            "base": "master",
+            "body": "Automated update of THIRD_PARTY_NOTICES.txt triggered by changes to dependencies in pyproject.toml and uv.lock."
+          }
+          EOF

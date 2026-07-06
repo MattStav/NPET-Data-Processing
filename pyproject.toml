@@ -1,0 +1,57 @@
+[build-system]
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+[project]
+name = "NPET_DP" # New Pico Event Timer Data Processing
+dynamic = ["version"]
+description = "Package for processing NPET data"
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE"]
+readme = "README.md"
+requires-python = ">=3.13"
+authors = [
+    { name = "Matěj Stavinoha", email = "matej.stavinoha@volny.cz" }
+]
+keywords = ["Time", "Data Analysis", "Precise Timestamps", "Precise Timing System"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.13",
+]
+url = "https://github.com/MattStav/NPET-data-processing"
+dependencies = [
+    "matplotlib>=3.8.0",
+    "bokeh>=3.8.2",
+    "typer>=0.16.0",
+    "click>=8.0",
+    "pydantic>=2.12.5",
+    "allantools>=2024.6",
+    "numpy>=2.3.1",
+]
+
+[project.scripts]
+npet-dp = "NPET_DP.__main__:npet_dp"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/NPET_DP"]
+
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.build.hooks.vcs]
+version-file = "src/NPET_DP/_version.py"
+
+[tool.hatch.version.raw-options]
+version_scheme = "post-release"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.3",
+    "pytest-sugar>=1.1.1",
+    "pytest-randomly>=4.1.0",
+    "pytest-xdist>=3.8.0",
+    "pytest-rerunfailures>=16.1",
+    "pytest-cov>=7.0.0",
+]
