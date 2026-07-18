@@ -1,5 +1,5 @@
 # NPET Data Processing (NPET_DP)
-[![CI](https://github.com/MattStav/NPET_data_processing/actions/workflows/testing-pipeline.yml/badge.svg)](https://github.com/MattStav/NPET_data_processing/actions/workflows/testing-pipeline.yml)
+[![CI](https://github.com/MattStav/NPET-data-processing/actions/workflows/testing-pipeline.yml/badge.svg)](https://github.com/MattStav/NPET-data-processing/actions/workflows/testing-pipeline.yml)
 [![Python](https://img.shields.io/badge/python-3.13%2B-blue)](https://www.python.org/)
 [![UV](https://img.shields.io/badge/package%20manager-uv-111111)](https://docs.astral.sh/uv/)
 [![Ruff](https://img.shields.io/badge/linting-ruff-2c2f33)](https://docs.astral.sh/ruff/)
