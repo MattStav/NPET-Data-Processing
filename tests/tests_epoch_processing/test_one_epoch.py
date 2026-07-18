@@ -23,7 +23,7 @@ def test_returns_when_no_files():
 
 def test_main_one_epoch_creates_a_plot(data_dir: Path, tmp_path: Path):
     """Test that the main function successfully creates a plot and saves it to the correct path."""
-    test_file: Path = data_dir / "test_data_stop.out"
+    test_file: Path = data_dir / "test_data_STOP.out"
     config.frequency = 500  # Preset the frequency to avoid user input during the test
     with (
         patch(
