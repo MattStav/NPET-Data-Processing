@@ -100,7 +100,7 @@ def auto_scale_data(
         if max_scale is not None and abs(scale_iter) >= max_scale:
             break
         scaled_data = data * (1000**scale_iter)
-        if 1 > np.abs(scaled_data.max()):
+        if np.abs(scaled_data.max()) < 1:
             scale_iter += 1
         elif np.abs(scaled_data.max()) > 1000:
             scale_iter -= 1
@@ -142,7 +142,7 @@ def auto_scale_num(
         if max_scale is not None and abs(scale_iter) >= max_scale:
             break
         scaled_num = num * (1000**scale_iter)
-        if 1 > np.abs(scaled_num):
+        if np.abs(scaled_num) < 1:
             scale_iter += 1
         elif np.abs(scaled_num) > 1000:
             scale_iter -= 1
