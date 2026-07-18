@@ -10,6 +10,7 @@ from NPET_DP.epoch_processing.helper_funcs import (
     get_unit,
     import_data,
     validate_inputs,
+    auto_scale_num,
 )
 from NPET_DP.epoch_processing.helper_plot import plot_time_deviation
 from NPET_DP.epoch_processing.helper_processing import is_continuous, process_overflow
@@ -92,12 +93,16 @@ def __plot_crossroad(data: NDArray, name: str) -> None:
     :param data: Data to be plotted, the first column is seconds, the second column is delay.
     :param name: Name of the file.
     """
+    # Calculate statistics
+    ave, ave_iter = auto_scale_num(float(np.average(data["femto"])))
+    ave_unit = get_unit("fs", ave_iter)
+    typer.secho(f"{name} mean delay = {ave:.5f} {ave_unit}", bold=True)
+    std, std_iter = auto_scale_num(float(np.std(data["femto"])))
+    std_unit = get_unit("fs", std_iter)
+    typer.echo(f"{name} STD = {std:.4f} {std_unit}")
+    # Scale the data for plotting
     sc_femto, scale_num = auto_scale_data(data["femto"])
     y_units = get_unit("fs", scale_num)
-    ave: float = float(np.average(sc_femto))
-    typer.secho(f"{name} mean delay = {ave:.5f} {y_units}", bold=True)
-    std: float = float(np.std(sc_femto))
-    typer.echo(f"{name} STD = {std:.4f} {y_units}")
     full_data: NDArray[np.floating] = np.column_stack((data["seconds"], sc_femto))
     if len(data) > 600:
         __plot_long(full_data, name, y_units)
