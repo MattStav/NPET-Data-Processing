@@ -7,10 +7,10 @@ from numpy.typing import NDArray
 
 from NPET_DP.epoch_processing.helper_funcs import (
     auto_scale_data,
+    auto_scale_num,
     get_unit,
     import_data,
     validate_inputs,
-    auto_scale_num,
 )
 from NPET_DP.epoch_processing.helper_plot import plot_time_deviation
 from NPET_DP.epoch_processing.helper_processing import is_continuous, process_overflow
