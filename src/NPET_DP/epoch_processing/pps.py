@@ -1,14 +1,14 @@
 from pathlib import Path
 
 import numpy as np
-from numpy.typing import NDArray
 import typer
 from matplotlib import pyplot as plt
+from numpy.typing import NDArray
 
 from NPET_DP.epoch_processing.helper_funcs import (
-    import_data,
     auto_scale_data,
     get_unit,
+    import_data,
     validate_inputs,
 )
 from NPET_DP.epoch_processing.helper_plot import plot_time_deviation

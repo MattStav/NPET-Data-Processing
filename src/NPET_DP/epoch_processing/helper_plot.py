@@ -5,10 +5,10 @@ from matplotlib import ticker
 from numpy.typing import NDArray
 
 from NPET_DP.epoch_processing.helper_funcs import (
-    scale_data,
-    validate_inputs,
     auto_scale_data,
     get_unit,
+    scale_data,
+    validate_inputs,
 )
 from NPET_DP.framework.constants import FEMTO
 from NPET_DP.framework.path_handler import get_plot_path

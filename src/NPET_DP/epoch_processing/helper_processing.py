@@ -2,13 +2,13 @@ import numpy as np
 from numpy.lib.recfunctions import unstructured_to_structured
 from numpy.typing import NDArray
 
-from NPET_DP.framework.config import config
-from NPET_DP.framework.constants import FEMTO
 from NPET_DP.epoch_processing.helper_funcs import (
-    validate_inputs,
     DATA_TYPE,
     check_data_structure,
+    validate_inputs,
 )
+from NPET_DP.framework.config import config
+from NPET_DP.framework.constants import FEMTO
 
 
 @validate_inputs

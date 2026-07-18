@@ -1,11 +1,11 @@
-from inspect import signature, Signature
 from functools import cache, wraps
+from inspect import Signature, signature
 from pathlib import Path
-from typing import Literal, Optional, get_args, Callable
+from typing import Callable, Literal, Optional, get_args
 
 import numpy as np
-from numpy.typing import NDArray
 import typer
+from numpy.typing import NDArray
 
 _UNITS_TYPE = Literal["s", "ms", "us", "ns", "ps", "fs"]
 _UNITS_SCALE: tuple[_UNITS_TYPE] = get_args(_UNITS_TYPE)
