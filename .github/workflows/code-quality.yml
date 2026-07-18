@@ -6,14 +6,22 @@ on:
   pull_request:
     branches: [ "master" ]
 
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   lint:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
 
     steps:
     - uses: actions/checkout@v4
+      if: github.event_name == 'pull_request'
+      with:
+        ref: ${{ github.head_ref }}
+
+    - uses: actions/checkout@v4
+      if: github.event_name != 'pull_request'
 
     - name: Install uv
       uses: astral-sh/setup-uv@v7
@@ -23,18 +31,65 @@ jobs:
         uv tool install ruff@0.15.12
 
     - name: Fix import order with Ruff
-      env:
-        REF_NAME: ${{ github.ref_name }}
       run: |
         ruff check src --select=I --fix
 
-        if ! git diff --quiet; then
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add src
-          git commit -m "style: sort imports with ruff"
-          git push origin "HEAD:$REF_NAME" || echo "Push rejected (branch protection?), skipping."
+    - name: Push fix straight to the PR branch
+      if: github.event_name == 'pull_request'
+      env:
+        HEAD_REF: ${{ github.head_ref }}
+      run: |
+        if git diff --quiet; then
+          echo "No import-order fixes needed."
+          exit 0
         fi
+        git config user.name "github-actions[bot]"
+        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git add src
+        git commit -m "style: sort imports with ruff"
+        git push origin "HEAD:$HEAD_REF"
+
+    - name: Open a PR for the master branch
+      if: github.event_name != 'pull_request'
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        if git diff --quiet; then
+          echo "No import-order fixes needed."
+          exit 0
+        fi
+
+        branch="fix-import-order"
+        git config user.name "github-actions[bot]"
+        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git checkout -B "$branch"
+        git add src
+        git commit -m "style: sort imports with ruff"
+        git push --force origin "$branch"
+
+        existing=$(curl -sS \
+          -H "Authorization: Bearer ${GH_TOKEN}" \
+          -H "Accept: application/vnd.github+json" \
+          "https://api.github.com/repos/${GITHUB_REPOSITORY}/pulls?head=${GITHUB_REPOSITORY%%/*}:${branch}&base=master&state=open" \
+          | jq 'length')
+
+        if [ "$existing" -gt 0 ]; then
+          echo "Open PR already exists for $branch; pushed update, no new PR needed."
+          exit 0
+        fi
+
+        curl -sS -X POST \
+          -H "Authorization: Bearer ${GH_TOKEN}" \
+          -H "Accept: application/vnd.github+json" \
+          "https://api.github.com/repos/${GITHUB_REPOSITORY}/pulls" \
+          -d @- <<EOF
+        {
+          "title": "Fix import order with Ruff",
+          "head": "${branch}",
+          "base": "master",
+          "body": "Automated import-order fix from the Code quality workflow."
+        }
+        EOF
 
     # The UP ruleset is not used because I like using Optional[T] :)
     - name: Lint with Ruff
