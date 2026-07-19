@@ -4,7 +4,7 @@ from NPET_DP.framework.config import config
 
 
 def settings_menu():
-    """Show a settings menu (not implemented yet)"""
+    """Show a settings menu"""
     typer.secho("\n========= Settings Menu =========", bold=True)
     typer.echo("\t1. Data gathering frequency")
     typer.echo("\t2. Sigma filter")
