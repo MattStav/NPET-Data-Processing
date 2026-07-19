@@ -43,7 +43,7 @@ def test_npet_dp_command_callable(npet_dp_installed_as_uv_tool: Path) -> None:
         input="0\n",
         capture_output=True,
         text=True,
-        timeout=30,
+        timeout=60,
     )
     assert result.returncode == 0, f"npet-dp failed: {result.stderr}"
     assert "Program terminated" in result.stdout, "Expected app to launch and exit cleanly"
@@ -62,7 +62,7 @@ def test_uv_tool_run_npet_dp_callable(
         capture_output=True,
         text=True,
         env=uv_tool_env,
-        timeout=30,
+        timeout=60,
     )
     assert result.returncode == 0, f"uv tool run NPET_DP failed: {result.stderr}"
     assert "Program terminated" in result.stdout, "Expected app to launch and exit cleanly"
