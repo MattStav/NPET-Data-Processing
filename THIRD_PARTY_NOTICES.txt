@@ -8255,7 +8255,7 @@ THE SOFTWARE.
 
 
 tornado
-6.5.1
+6.5.7
 Apache Software License
 
                                  Apache License
