@@ -124,6 +124,7 @@ def main_pps() -> None:
     # Plot Allan time deviation
     if not is_continuous(processed["seconds"]):
         typer.secho("Data not continuous, skipping TDEV!", fg=typer.colors.RED)
+        return
     typer.echo()
     typer.echo("Plotting TDEV...")
     processed_drift_comp, deg = drift_removal_prompt(processed)
