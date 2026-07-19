@@ -5,12 +5,15 @@ import numpy.typing as npt
 import pytest
 
 from NPET_DP.epoch_processing.helper_funcs import (
+    DATA_TYPE,
     auto_scale_data,
     auto_scale_num,
+    check_data_structure,
     import_data,
     get_unit,
     scale_data,
     scale_num,
+    validate_inputs,
 )
 
 
@@ -163,3 +166,132 @@ def test_get_unit_out_of_range(original_unit, scale_iter):
     """Test that a ValueError is raised when the resulting unit is out of the supported range."""
     with pytest.raises(ValueError):
         get_unit(original_unit, scale_iter)
+
+
+def test_check_data_structure_valid():
+    """Test that correctly structured data passes without raising."""
+    data = np.array([(1, 2), (3, 4)], dtype=DATA_TYPE)
+    check_data_structure(data)
+
+
+@pytest.mark.parametrize(
+    "data, arg_name, expected_message",
+    (
+        pytest.param(
+            np.array([[(1, 2), (3, 4)]], dtype=DATA_TYPE),
+            None,
+            "'data' must be 1D",
+            id="not-1d-default-name",
+        ),
+        pytest.param(
+            np.array([1, 2, 3]),
+            None,
+            "'data' missing fields: 'seconds, femto'",
+            id="wrong-dtype-default-name",
+        ),
+        pytest.param(
+            np.array([[1, 2], [3, 4]]),
+            "my_arg",
+            "'my_arg' must be 1D",
+            id="not-1d-custom-name",
+        ),
+        pytest.param(
+            np.array([1, 2, 3]),
+            "my_arg",
+            "'my_arg' missing fields: 'seconds, femto'",
+            id="wrong-dtype-custom-name",
+        ),
+    ),
+)
+def test_check_data_structure_invalid(data, arg_name, expected_message):
+    """Test that a ValueError with the correct message is raised for malformed data."""
+    with pytest.raises(ValueError, match=expected_message):
+        check_data_structure(data, arg_name=arg_name)
+
+
+def test_validate_inputs_requires_data_param():
+    """Test that decorating a function without a 'data...' parameter raises a TypeError."""
+    with pytest.raises(TypeError, match="Expected 'data' argument"):
+
+        @validate_inputs
+        def func(x):
+            return x
+
+
+@pytest.mark.parametrize(
+    "call",
+    (
+        pytest.param(lambda func, data: func(data), id="positional"),
+        pytest.param(lambda func, data: func(data=data), id="keyword"),
+    ),
+)
+def test_validate_inputs_passes_valid_data(call):
+    """Test that a function decorated with validate_inputs runs normally for valid data."""
+
+    @validate_inputs
+    def func(data):
+        return len(data)
+
+    data = np.array([(1, 2), (3, 4)], dtype=DATA_TYPE)
+    assert call(func, data) == 2
+
+
+@pytest.mark.parametrize(
+    "data, expected_message",
+    (
+        pytest.param(np.array([[1, 2]]), "must be 1D", id="not-1d"),
+        pytest.param(np.array([1, 2, 3]), "missing fields", id="wrong-dtype"),
+    ),
+)
+@pytest.mark.parametrize(
+    "call",
+    (
+        pytest.param(lambda func, data: func(data), id="positional"),
+        pytest.param(lambda func, data: func(data=data), id="keyword"),
+    ),
+)
+def test_validate_inputs_rejects_invalid_data(call, data, expected_message):
+    """Test that a function decorated with validate_inputs raises for invalid data."""
+
+    @validate_inputs
+    def func(data):
+        return data
+
+    with pytest.raises(ValueError, match=expected_message):
+        call(func, data)
+
+
+@pytest.mark.parametrize(
+    "invalid_param",
+    (
+        pytest.param("data_a", id="first-param-invalid"),
+        pytest.param("data_b", id="second-param-invalid"),
+    ),
+)
+def test_validate_inputs_checks_every_data_prefixed_param(invalid_param):
+    """Test that validate_inputs validates every parameter whose name starts with 'data'."""
+
+    @validate_inputs
+    def func(data_a, data_b):
+        return data_a, data_b
+
+    valid = np.array([(1, 2)], dtype=DATA_TYPE)
+    invalid = np.array([1, 2, 3])
+    values = {invalid_param: invalid}
+    kwargs = {
+        "data_a": values.get("data_a", valid),
+        "data_b": values.get("data_b", valid),
+    }
+    with pytest.raises(ValueError, match=f"'{invalid_param}' missing fields"):
+        func(**kwargs)
+
+
+def test_validate_inputs_ignores_non_data_params():
+    """Test that validate_inputs does not validate parameters not prefixed with 'data'."""
+
+    @validate_inputs
+    def func(other, data):
+        return other, data
+
+    valid = np.array([(1, 2)], dtype=DATA_TYPE)
+    assert func(other="not an array", data=valid) == ("not an array", valid)
