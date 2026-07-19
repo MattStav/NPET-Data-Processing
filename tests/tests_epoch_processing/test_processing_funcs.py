@@ -1,7 +1,6 @@
 import numpy as np
 import numpy.typing as npt
 import pytest
-from unittest.mock import patch
 
 from NPET_DP.epoch_processing.helper_funcs import DATA_TYPE
 from NPET_DP.epoch_processing.helper_processing import (
@@ -143,7 +142,7 @@ def test_discard_rows_until_first_col_match_raises_index_error_when_no_match():
 def test_calculate_delay():
     """Test calculate_delay with simple matching data"""
     val: int = 100_000_000_000_000
-    data_start= np.array([(i, val) for i in range(12)], dtype=DATA_TYPE)
+    data_start = np.array([(i, val) for i in range(12)], dtype=DATA_TYPE)
     # Stop data with a constant 1000 femto delay
     data_stop = np.array([(i, val + 1000) for i in range(12)], dtype=DATA_TYPE)
     delays: npt.NDArray = calculate_delay(
@@ -172,7 +171,9 @@ def test_calculate_delay_wraparound():
 
 def test_calculate_delay_missing_and_out_of_range():
     """Test calculate_delay with missing points and out-of-range delays (10+ points)."""
-    data_start = np.array([(i, 500_000_000_000_000) for i in range(15)], dtype=DATA_TYPE)
+    data_start = np.array(
+        [(i, 500_000_000_000_000) for i in range(15)], dtype=DATA_TYPE
+    )
     # Stop data:
     # 0-4: matched
     # 5: missing in stop
@@ -273,10 +274,8 @@ def test_detect_signal_all_same_values():
 def test_recursive_sigma_filter_no_outliers():
     """Test recursive_sigma_filter when all data is within the sigma range."""
     data: npt.NDArray = _structured_data([100, 101, 99, 100, 100])
-    # mean=100, std ~0.63. With sigma=2.2, range is ~[98.6, 101.4]. All in.
-    with patch("NPET_DP.epoch_processing.helper_processing.config") as mock_config:
-        mock_config.sigma = 2.2
-        filtered, iterations = recursive_sigma_filter(data)
+    # mean=100, std ~0.63. With sigma=2.2, range is ~[98.6, 101.4]. All are in.
+    filtered, iterations = recursive_sigma_filter(data, sigma_mult=2.2)
     assert np.array_equal(filtered, data)
     assert iterations == 1
 
@@ -289,9 +288,7 @@ def test_recursive_sigma_filter_with_outliers():
     # 1000 is filtered out.
     # Second pass: [100, 101, 99, 100, 100], mean=100, std=0.63. Range [98.6, 101.4]. All in.
     # Converged.
-    with patch("NPET_DP.epoch_processing.helper_processing.config") as mock_config:
-        mock_config.sigma = 2.2
-        filtered, iterations = recursive_sigma_filter(data)
+    filtered, iterations = recursive_sigma_filter(data, sigma_mult=2.2)
     assert np.array_equal(filtered, data[:5])
     assert iterations == 2
 
@@ -299,9 +296,7 @@ def test_recursive_sigma_filter_with_outliers():
 def test_recursive_sigma_filter_all_identical():
     """Test recursive_sigma_filter when all values are identical (std=0)."""
     data: npt.NDArray = _structured_data([100, 100, 100])
-    with patch("NPET_DP.epoch_processing.helper_processing.config") as mock_config:
-        mock_config.sigma = 2.2
-        filtered, iterations = recursive_sigma_filter(data)
+    filtered, iterations = recursive_sigma_filter(data, sigma_mult=2.2)
     assert np.array_equal(filtered, data)
     assert iterations == 1
 
@@ -311,18 +306,14 @@ def test_recursive_sigma_filter_max_iter():
     # We need a case that doesn't converge or just force it with max_iter=1
     data: npt.NDArray = _structured_data([100, 100, 100, 1000])
     # It would normally take 2 iterations. Setting max_iter=1 should trigger an error.
-    with patch("NPET_DP.epoch_processing.helper_processing.config") as mock_config:
-        mock_config.sigma = 2.2
-        with pytest.raises(RuntimeError, match="Max iterations reached!"):
-            recursive_sigma_filter(data, max_iter=1)
+    with pytest.raises(RuntimeError, match="Max iterations reached!"):
+        recursive_sigma_filter(data, sigma_mult=2.2, max_iter=1)
 
 
 def test_recursive_sigma_filter_empty():
     """Test recursive_sigma_filter with empty data."""
     data: npt.NDArray = np.array([], dtype=DATA_TYPE)
-    with patch("NPET_DP.epoch_processing.helper_processing.config") as mock_config:
-        mock_config.sigma = 2.2
-        filtered, iterations = recursive_sigma_filter(data)
+    filtered, iterations = recursive_sigma_filter(data, sigma_mult=2.2)
     assert len(filtered) == 0
     assert iterations == 0
 
@@ -336,9 +327,7 @@ def test_recursive_sigma_filter_large_dataset():
     values = np.concatenate([clean_data, outliers])
     np.random.shuffle(values)
     data = np.array(list(zip(range(len(values)), values, strict=True)), dtype=DATA_TYPE)
-    with patch("NPET_DP.epoch_processing.helper_processing.config") as mock_config:
-        mock_config.sigma = 3.0
-        filtered, iterations = recursive_sigma_filter(data)
+    filtered, iterations = recursive_sigma_filter(data, sigma_mult=3.0)
     # With sigma=3.0, we expect most of clean_data to stay and all outliers to be removed.
     # Outliers (2000-3000) are far from mean (1000) with std (10).
     assert len(filtered) < len(data)

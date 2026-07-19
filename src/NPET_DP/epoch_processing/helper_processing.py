@@ -7,7 +7,6 @@ from NPET_DP.epoch_processing.helper_funcs import (
     check_data_structure,
     validate_inputs,
 )
-from NPET_DP.framework.config import config
 from NPET_DP.framework.constants import FEMTO
 
 
@@ -190,27 +189,32 @@ def detect_signal(
 
 
 @validate_inputs
-def recursive_sigma_filter(data: NDArray, max_iter: int = 100) -> tuple[NDArray, int]:
+def recursive_sigma_filter(
+    data: NDArray,
+    *,
+    sigma_mult: float,
+    max_iter: int = 100,
+) -> tuple[NDArray, int]:
     """
     Recursively filter out values outside the ±n_sigma range of gaussian fit until convergence.
     :param data: Data to process, in the FW standard format.
-    :param max_iter: Maximum number of iterations to prevent infinite loops.
+    :param sigma_mult: Standard deviation multiplier that defines the range of values to keep (keyword-only).
+    :param max_iter: Maximum number of iterations to prevent infinite loops (keyword-only).
     :return: Filtered data and number of filtering iterations.
     """
     assert max_iter > 0, "Max iterations must be positive"
     new_data: NDArray = data.copy()
-    sigma: float = config.sigma
     prev_data_len: int = 0
     iteration: int = 0
     # Iterate until the data is no longer changing in size
     while prev_data_len != len(new_data):
         prev_data_len = len(new_data)
-        filter_values: NDArray = new_data["femto"]
-        mn: float = float(np.mean(filter_values))
-        std: float = float(np.std(filter_values))
+        values: NDArray = new_data["femto"]
+        mn: float = float(np.mean(values))
+        std: float = float(np.std(values))
         # Filter out the outliers from the new_data
-        low_filter: NDArray[np.bool_] = np.asarray(filter_values >= mn - sigma * std)
-        high_filter: NDArray[np.bool_] = np.asarray(filter_values <= mn + sigma * std)
+        low_filter: NDArray[np.bool_] = np.asarray(values >= mn - sigma_mult * std)
+        high_filter: NDArray[np.bool_] = np.asarray(values <= mn + sigma_mult * std)
         new_data = new_data[low_filter & high_filter]
         iteration += 1
         if iteration == max_iter:

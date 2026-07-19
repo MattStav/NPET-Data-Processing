@@ -298,7 +298,10 @@ def main_two_epochs() -> None:
     while True:
         selected_delays: NDArray = __select_data_within_range(delays)
         # Apply the recursive sigma filter to the data
-        sigma_filtered, sigma_iter = recursive_sigma_filter(selected_delays)
+        sigma_filtered, sigma_iter = recursive_sigma_filter(
+            selected_delays,
+            sigma_mult=config.sigma,
+        )
         typer.echo(f"\nRecursive {config.sigma} sigma filter results:")
         sc_mean, sc_mean_iter = auto_scale_num(sigma_filtered["femto"].mean())
         sc_std, sc_std_iter = auto_scale_num(sigma_filtered["femto"].std())

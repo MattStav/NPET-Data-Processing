@@ -40,12 +40,12 @@ def test_two_epochs(data_dir):
     assert np.isclose(max_delay, 60729103.9), f"Unexpected max_delay: {max_delay}"
     mask = (min_delay <= delays["femto"]) & (delays["femto"] <= max_delay)
     selected_delays = delays[mask]
-    assert len(selected_delays) == 2419, f"Unexpected delay sel.: {len(selected_delays)}"
-    with patch("NPET_DP.epoch_processing.helper_processing.config") as mock_config:
-        mock_config.sigma = 2.2
-        sigma_filtered, sigma_iter = recursive_sigma_filter(selected_delays)
-        assert len(sigma_filtered) == 1567, f"Unexpected sigma filtered: {len(sigma_filtered)}"
-        assert sigma_iter == 18, f"Unexpected sigma iterations: {sigma_iter}"
+    delay_sel = len(selected_delays)
+    assert delay_sel == 2419, f"Unexpected delay sel.: {delay_sel}"
+    sigma_filtered, sigma_iter = recursive_sigma_filter(selected_delays, sigma_mult=2.2)
+    sigma_f_num = len(sigma_filtered)
+    assert sigma_f_num == 1567, f"Unexpected sigma filtered: {sigma_f_num}"
+    assert sigma_iter == 18, f"Unexpected sigma iterations: {sigma_iter}"
     mean = np.mean(sigma_filtered["femto"])
     sc_mean, mean_iter = auto_scale_num(mean)
     mean_unit = get_unit("fs", mean_iter)
@@ -56,5 +56,5 @@ def test_two_epochs(data_dir):
     std_unit = get_unit("fs", std_iter)
     assert np.isclose(sc_std, 17.1517), f"Unexpected std: {sc_std}"
     assert std_unit == "ps", f"Unexpected std unit: {std_unit}"
-    ret_rate: float = 100 * len(sigma_filtered) / len(delays)
+    ret_rate: float = 100 * sigma_f_num / len(delays)
     assert np.isclose(ret_rate, 4.86, atol=0.005), f"Unexpected return rate: {ret_rate}"
