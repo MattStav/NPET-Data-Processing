@@ -1130,7 +1130,7 @@ MIT
 
 
 fonttools
-4.58.4
+4.60.2
 MIT
 MIT License
 
