@@ -94,7 +94,7 @@ jobs:
     # The UP ruleset is not used because I like using Optional[T] :)
     - name: Lint with Ruff
       run: |
-        ruff check src --select=E,F,I,B,C4,SIM,PTH --ignore E501 --output-format=github
+        ruff check src --select=E,F,I,B,C4,SIM,PTH,ANN --ignore E501 --output-format=github
 
     - name: Format check with Ruff
       run: |

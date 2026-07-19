@@ -1,7 +1,7 @@
 from functools import cache, wraps
 from inspect import Signature, signature
 from pathlib import Path
-from typing import Callable, Literal, Optional, get_args
+from typing import Callable, Literal, Optional, ParamSpec, TypeVar, get_args
 
 import numpy as np
 import typer
@@ -11,8 +11,11 @@ _UNITS_TYPE = Literal["s", "ms", "us", "ns", "ps", "fs"]
 _UNITS_SCALE: tuple[_UNITS_TYPE] = get_args(_UNITS_TYPE)
 DATA_TYPE = [("seconds", np.int_), ("femto", np.int_)]
 
+_P = ParamSpec("_P")
+_R = TypeVar("_R")
 
-def validate_inputs(func: Callable) -> Callable:
+
+def validate_inputs(func: Callable[_P, _R]) -> Callable[_P, _R]:
     """
     Decorator that validates any argument of the decorated function whose name starts with 'data',
     regardless of whether it's passed positionally or as a keyword argument.
@@ -25,7 +28,7 @@ def validate_inputs(func: Callable) -> Callable:
         raise TypeError(f"Expected 'data' argument for {func_name}")
 
     @wraps(func)
-    def wrapper(*args, **kwargs):
+    def wrapper(*args: _P.args, **kwargs: _P.kwargs) -> _R:
         bound = sig.bind(*args, **kwargs)
         bound.apply_defaults()
         for name in data_params:

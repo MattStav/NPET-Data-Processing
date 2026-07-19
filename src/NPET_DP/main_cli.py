@@ -76,7 +76,7 @@ def arg_parse(
 
 
 @npet_dp.command()
-def main_menu():
+def main_menu() -> None:
     """Show a simple interactive menu."""
     while True:
         typer.secho("\n========= Main Menu =========", bold=True)
@@ -104,6 +104,6 @@ def main_menu():
                 open_plot_outputs()
             case 0:
                 typer.echo("Program terminated")
-                return True
+                return
             case _:
                 typer.secho("Invalid choice", fg=typer.colors.RED)
