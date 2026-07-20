@@ -268,8 +268,10 @@ def main_two_epochs() -> None:
         stop_file: Path = user_file_select("STOP signal", [start_file])
     except FileNotFoundError:
         return
-    data_stop: NDArray[np.int_] = import_data(stop_file)
+    typer.echo(f"Importing data from {start_file}")
     data_start: NDArray[np.int_] = import_data(start_file)
+    typer.echo(f"Importing data from {stop_file}")
+    data_stop: NDArray[np.int_] = import_data(stop_file)
     try:
         matching_data: _Data = __match_data(data_start=data_start, data_stop=data_stop)
     except IndexError:

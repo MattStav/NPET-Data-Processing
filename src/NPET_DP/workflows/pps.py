@@ -116,6 +116,7 @@ def main_pps() -> None:
         pps_file_path: Path = user_file_select()
     except FileNotFoundError:
         return
+    typer.echo(f"Importing data from {pps_file_path}")
     data_pps: NDArray = import_data(pps_file_path)
     processed: NDArray = process_overflow(data_pps)
     # Plot the data

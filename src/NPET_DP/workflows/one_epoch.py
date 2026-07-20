@@ -37,4 +37,5 @@ def main_one_epoch() -> None:
         epoch_file_path: Path = user_file_select()
     except FileNotFoundError:
         return
+    typer.echo(f"Importing data from {epoch_file_path}")
     __plot_singular_data(import_data(epoch_file_path), epoch_file_path.stem)

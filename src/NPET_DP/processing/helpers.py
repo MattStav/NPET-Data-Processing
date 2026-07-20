@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import Callable, Literal, Optional, ParamSpec, TypeVar, get_args
 
 import numpy as np
-import typer
 from numpy.typing import NDArray
 
 _UNITS_TYPE = Literal["s", "ms", "us", "ns", "ps", "fs"]
@@ -67,7 +66,6 @@ def import_data(path: Path, seconds_add: Optional[int] = None) -> NDArray:
     """
     assert path.is_file(), f"File {path} does not exist"
     assert path.suffix == ".out", f"File {path} is not an epoch output file"
-    typer.echo(f"Importing data from {path}")
     data = np.loadtxt(path, dtype=str)
     seconds: NDArray[np.int_] = data[:, 0].astype(int)
     frac_part: NDArray[np.str_] = data[:, 1].astype(str)
