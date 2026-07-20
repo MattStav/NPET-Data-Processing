@@ -245,3 +245,12 @@ class NPETData(BaseModel):
         filtered_seconds = self.seconds[mask]
         filtered_femto = self.femto[mask]
         return NPETData(seconds=filtered_seconds, femto=filtered_femto)
+
+    def modulo(self, mod_value: int) -> "NPETData":
+        """
+        Return a new NPETData object with the femto values modulo the given value.
+        :param mod_value: The value to modulo the femto values by.
+        :return: NPETData object with femto values modulo the given value.
+        """
+        mod_femto = np.mod(self.femto, mod_value)
+        return NPETData(seconds=self.seconds, femto=mod_femto)
