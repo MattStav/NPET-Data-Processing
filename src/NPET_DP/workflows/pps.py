@@ -1,3 +1,4 @@
+from NPET_DP.processing.data_struct import NPETData
 from pathlib import Path
 
 import numpy as np
@@ -5,37 +6,29 @@ import typer
 from matplotlib import pyplot as plt
 from numpy.typing import NDArray
 
-from NPET_DP.processing.helpers import (
-    auto_scale_data,
-    auto_scale_num,
-    get_unit,
-    import_data,
-    validate_inputs,
-)
 from NPET_DP.processing.plotting import plot_time_deviation
-from NPET_DP.processing.calculations import is_continuous, process_overflow
 from NPET_DP.workflows.helpers import drift_removal_prompt
 from NPET_DP.framework.file_selection import user_file_select
 from NPET_DP.framework.path_handler import get_plot_path
 
 
-def __plot_short(data: np.ndarray, name: str, y_units: str) -> None:
+def __plot_short(data: NPETData, name: str) -> None:
     """
     Show the data using a scatter plot.
     :param data: Data to be plotted, the first column is seconds, the second column is delay.
     :param name: Name of the file.
-    :param y_units: Units of the delay data (y-axis).
     """
     typer.echo("Plotting PPS data...")
+    sc_femto, unit = data.sc_femto
     plt.plot(
-        range(len(data)),
-        data[:, 1],
+        range(len(sc_femto)),
+        sc_femto,
         marker="o",
         linestyle="-",
         linewidth=1,
         markersize=5,
     )
-    plt.ylabel(f"NPET clock to PPS difference [{y_units}]")
+    plt.ylabel(f"NPET clock to PPS difference [{unit}]")
     plt.xlabel("Measurement number [n]")
     plt.title("PPS Data Plot")
     plt.grid()
@@ -43,16 +36,16 @@ def __plot_short(data: np.ndarray, name: str, y_units: str) -> None:
     plt.show(block=False)
 
 
-def __plot_long(data: NDArray, name: str, y_units: str) -> None:
+def __plot_long(data: NPETData, name: str) -> None:
     """
     Plot a large amount of PPS data in a scatter plot.
     :param data: Data to be plotted, the first column is seconds, the second column is delay.
     :param name: Name of the file.
-    :param y_units: Units of the delay data (y-axis).
     """
     typer.echo("Plotting large PPS dataset...")
-    x = data[:, 0]
-    y = data[:, 1]
+    sc_data, unit = data.sc_structured_arr
+    x = sc_data["seconds"]
+    y = sc_data["femto"]
     plt.plot(
         x,
         y,
@@ -77,7 +70,7 @@ def __plot_long(data: NDArray, name: str, y_units: str) -> None:
         linewidth=2,
         label=f"Moving Avg (w = {window_s} s)",
     )
-    plt.ylabel(f"NPET clock to PPS difference [{y_units}]")
+    plt.ylabel(f"NPET clock to PPS difference [{unit}]")
     plt.xlabel("Measurement second [s]")
     plt.title(f"PPS Plot - {name}")
     plt.legend()
@@ -86,28 +79,20 @@ def __plot_long(data: NDArray, name: str, y_units: str) -> None:
     plt.show(block=False)
 
 
-@validate_inputs
-def __plot_crossroad(data: NDArray, name: str) -> None:
+def __plot_crossroad(data: NPETData, name: str) -> None:
     """
     Plot the PPS data, using a different plotting method depending on the size of the data.
-    :param data: Data to be plotted, the first column is seconds, the second column is delay.
+    :param data: Data to be plotted as NPETData object.
     :param name: Name of the file.
     """
-    # Calculate statistics
-    ave, ave_iter = auto_scale_num(float(np.average(data["femto"])))
-    ave_unit = get_unit("fs", ave_iter)
-    typer.secho(f"{name} mean delay = {ave:.5f} {ave_unit}", bold=True)
-    std, std_iter = auto_scale_num(float(np.std(data["femto"])))
-    std_unit = get_unit("fs", std_iter)
+    mean, mean_unit = data.sc_mean
+    typer.secho(f"{name} mean delay = {mean:.5f} {mean_unit}", bold=True)
+    std, std_unit = data.sc_std
     typer.echo(f"{name} STD = {std:.4f} {std_unit}")
-    # Scale the data for plotting
-    sc_femto, scale_num = auto_scale_data(data["femto"])
-    y_units = get_unit("fs", scale_num)
-    full_data: NDArray[np.floating] = np.column_stack((data["seconds"], sc_femto))
     if len(data) > 600:
-        __plot_long(full_data, name, y_units)
+        __plot_long(data, name)
     else:
-        __plot_short(full_data, name, y_units)
+        __plot_short(data, name)
 
 
 def main_pps() -> None:
@@ -117,22 +102,21 @@ def main_pps() -> None:
     except FileNotFoundError:
         return
     typer.echo(f"Importing data from {pps_file_path}")
-    data_pps: NDArray = import_data(pps_file_path)
-    processed: NDArray = process_overflow(data_pps)
-    # Plot the data
+    data: NPETData = NPETData.from_path(pps_file_path)
+    processed: NPETData = data.process_incremental_overflow()
     typer.echo()
     __plot_crossroad(processed, name=pps_file_path.stem)
     # Plot Allan time deviation
-    if not is_continuous(processed["seconds"]):
+    if not processed.is_seconds_continuous():
         typer.secho("Data not continuous, skipping TDEV!", fg=typer.colors.RED)
         return
     typer.echo()
     typer.echo("Plotting TDEV...")
-    processed_drift_comp, deg = drift_removal_prompt(processed)
-    plot_time_deviation(processed_drift_comp, 1, name=pps_file_path.stem)
+    drift_compensated, deg = drift_removal_prompt(processed)
+    plot_time_deviation(drift_compensated.structured_arr, 1, name=pps_file_path.stem)
     if deg:
         typer.echo("Plotting PPS data after drift removal...")
         __plot_crossroad(
-            processed_drift_comp,
+            drift_compensated,
             name=f"{pps_file_path.stem} without pol deg {deg} drift",
         )

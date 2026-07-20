@@ -2,43 +2,87 @@ from numpy.lib.recfunctions import unstructured_to_structured
 from pathlib import Path
 import numpy as np
 from numpy.typing import NDArray
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, model_validator, PrivateAttr
 
 from NPET_DP.processing.calculations import (
     discard_rows_until_first_col_match,
     calculate_delay,
     detect_signal,
     recursive_sigma_filter,
+    process_overflow,
+    is_continuous,
+    remove_drift,
 )
-from NPET_DP.processing.helpers import import_data, DATA_TYPE, check_data_structure
+from NPET_DP.processing.helpers import (
+    import_data,
+    DATA_TYPE,
+    check_data_structure,
+    _UNITS_TYPE,
+    auto_scale_data,
+    get_unit,
+    auto_scale_num,
+)
 
 
 class NPETData(BaseModel):
     """Data structure for NPET data."""
 
-    __seconds: NDArray[np.int_]
-    __femto: NDArray[np.int_]
+    model_config = ConfigDict(frozen=True, arbitrary_types_allowed=True)
+
+    seconds: NDArray[np.int_]
+    femto: NDArray[np.int_]
+
+    @model_validator(mode="after")
+    def _lock_arrays(self) -> "NPETData":
+        self.seconds.flags.writeable = False
+        self.femto.flags.writeable = False
+        return self
 
     def __repr__(self) -> str:
         return f"NPETData(len={len(self.structured_arr)})"
 
-    @property
-    def seconds(self) -> NDArray[np.int_]:
-        """1D array holding the measured seconds delay values in one column."""
-        return self.__seconds
+    def __len__(self) -> int:
+        sec_len: int = len(self.seconds)
+        femto_len: int = len(self.femto)
+        assert sec_len == femto_len, f"Invalid data len: {sec_len} != {femto_len}"
+        return sec_len
 
     @property
-    def femto(self) -> NDArray[np.int_]:
-        """1D array holding the measured femtoseconds delay values in one column."""
-        return self.__femto
+    def sc_femto(self) -> tuple[NDArray[np.floating], _UNITS_TYPE]:
+        """Scaled femtoseconds delay values and their units."""
+        scaled, sc_iter = auto_scale_data(self.femto)
+        return scaled, get_unit("fs", sc_iter)
+
+    @property
+    def sc_mean(self) -> tuple[float, _UNITS_TYPE]:
+        """Mean of the femtosecond delay values and its units."""
+        mean_value = np.mean(self.femto)
+        scaled_mean, sc_iter = auto_scale_num(mean_value)
+        return float(scaled_mean), get_unit("fs", sc_iter)
+
+    @property
+    def sc_std(self) -> tuple[float, _UNITS_TYPE]:
+        """Standard deviation of the femtosecond delay values and its units."""
+        std_value = np.std(self.femto)
+        scaled_std, sc_iter = auto_scale_num(std_value)
+        return float(scaled_std), get_unit("fs", sc_iter)
 
     @property
     def structured_arr(self) -> NDArray:
         """Structured array holding the measured seconds and femtoseconds delay values in two columns."""
-        arr: NDArray = np.column_stack((self.__seconds, self.__femto))
+        arr: NDArray = np.column_stack((self.seconds, self.femto))
         struct_arr: NDArray = unstructured_to_structured(arr, dtype=np.dtype(DATA_TYPE))
         check_data_structure(struct_arr)
         return struct_arr
+
+    @property
+    def sc_structured_arr(self) -> tuple[NDArray, _UNITS_TYPE]:
+        """Structured array holding the scaled seconds and femtoseconds delay values in two columns."""
+        sc_femto, unit = self.sc_femto
+        arr: NDArray = np.column_stack((self.seconds, sc_femto))
+        struct_arr: NDArray = unstructured_to_structured(arr, dtype=np.dtype(DATA_TYPE))
+        check_data_structure(struct_arr)
+        return struct_arr, unit
 
     @classmethod
     def from_path(cls, data_path: Path, seconds_add: int = 0) -> "NPETData":
@@ -49,27 +93,28 @@ class NPETData(BaseModel):
         :return: NPETData object
         """
         data: NDArray = import_data(data_path, seconds_add)
-        return cls(__seconds=data["seconds"], __femto=data["femto"])
+        return cls.from_structured_arr(data)
 
-    def adjust_seconds(self, seconds_add: int) -> None:
+    @classmethod
+    def from_structured_arr(cls, structured_arr: NDArray) -> "NPETData":
         """
-        Adjust the `seconds` delay values by a given amount.
-        :param seconds_add: The number of seconds to add to each epoch; can be positive or negative
+        Init NPETData from a structured array.
+        :param structured_arr: Structured array holding the measured seconds and femtoseconds delay values in two columns.
+        :return: NPETData object
         """
-        self.__seconds += seconds_add
+        check_data_structure(structured_arr)
+        return cls(seconds=structured_arr["seconds"], femto=structured_arr["femto"])
 
-    def discard_rows_until_ref_match(self, data_ref: NDArray) -> None:
+    def discard_rows_until_ref_match(self, data_ref: NDArray) -> "NPETData":
         """
         Discard rows from the data until the first row of the first column matches the reference data.
         :param data_ref: Reference data, the first row of the first column is used to match.
         """
-        new_data, discarded = discard_rows_until_first_col_match(
+        ret, _ = discard_rows_until_first_col_match(
             data_to_process=self.structured_arr,
             data_ref=data_ref,
         )
-        if discarded > 0:
-            self.__seconds = new_data["seconds"]
-            self.__femto = new_data["femto"]
+        return NPETData.from_structured_arr(ret)
 
     def calc_delay_start(self, *, stop: NDArray, frequency: int) -> "NPETData":
         """
@@ -83,7 +128,7 @@ class NPETData(BaseModel):
             data_stop=stop,
             frequency=frequency,
         )
-        return NPETData(__seconds=ret["seconds"], __femto=ret["femto"])
+        return NPETData.from_structured_arr(ret)
 
     def calc_delay_stop(self, *, start: NDArray, frequency: int) -> "NPETData":
         """
@@ -97,7 +142,7 @@ class NPETData(BaseModel):
             data_stop=self.structured_arr,
             frequency=frequency,
         )
-        return NPETData(__seconds=ret["seconds"], __femto=ret["femto"])
+        return NPETData.from_structured_arr(ret)
 
     def detect_signal(
         self,
@@ -111,20 +156,21 @@ class NPETData(BaseModel):
         :return: Boolean masks indicating detected signals.
         """
         return detect_signal(
-            self.__femto,
+            self.femto,
             bin_size=bin_size,
             percentage_threshold=percentage_threshold,
         )
 
     def define_signal_range(
-        self, signal_mask: NDArray[np.bool_]
+        self,
+        signal_mask: NDArray[np.bool_],
     ) -> tuple[float, float]:
         """
         Calculate a range of data around the detected signal.
         :param signal_mask: Boolean mask indicating the detected signal
         :return: A tuple defining the range min and max values
         """
-        signal_values: NDArray[np.int_] = self.__femto[signal_mask]
+        signal_values: NDArray[np.int_] = self.femto[signal_mask]
         range_center: float = (signal_values.max() + signal_values.min()) / 2
         new_range_size: float = (signal_values.max() - signal_values.min()) * 8
         return (
@@ -138,9 +184,9 @@ class NPETData(BaseModel):
         :param filter_mask: Boolean mask indicating which data points to keep
         :return: NPETData object with filtered data
         """
-        filtered_seconds = self.__seconds[filter_mask]
-        filtered_femto = self.__femto[filter_mask]
-        return NPETData(__seconds=filtered_seconds, __femto=filtered_femto)
+        filtered_seconds = self.seconds[filter_mask]
+        filtered_femto = self.femto[filter_mask]
+        return NPETData(seconds=filtered_seconds, femto=filtered_femto)
 
     def recursive_sigma_filter(
         self,
@@ -158,4 +204,22 @@ class NPETData(BaseModel):
             sigma_mult=sigma_mult,
             max_iter=max_iter,
         )
-        return NPETData(__seconds=res["seconds"], __femto=res["femto"])
+        return NPETData.from_structured_arr(res)
+
+    def process_incremental_overflow(self) -> "NPETData":
+        """Process the data to handle incremental overflows."""
+        res = process_overflow(self.structured_arr)
+        return NPETData.from_structured_arr(res)
+
+    def is_seconds_continuous(self, expected_diff: int = 1) -> bool:
+        """Return True if the `seconds` data is continuous, False otherwise."""
+        return is_continuous(self.seconds, expected_diff=expected_diff)
+
+    def compensate_drift(self, pol_deg: int = 1) -> "NPETData":
+        """
+        Remove drift from the data using polynomial regression.
+        :param pol_deg: Degree of the polynomial used for drift removal.
+        :return: NPETData object with drift removed.
+        """
+        no_drift = remove_drift(self.structured_arr, deg=pol_deg)
+        return NPETData.from_structured_arr(no_drift)
