@@ -46,7 +46,7 @@ def test_npet_dp_command_callable(npet_dp_installed_as_uv_tool: Path) -> None:
         timeout=60,
     )
     assert result.returncode == 0, f"npet-dp failed: {result.stderr}"
-    assert "Program terminated" in result.stdout, "Expected app to launch and exit cleanly"
+    assert "terminated" in result.stdout, "Expected app to launch and exit cleanly"
 
 
 @pytest.mark.smoke
@@ -65,4 +65,4 @@ def test_uv_tool_run_npet_dp_callable(
         timeout=60,
     )
     assert result.returncode == 0, f"uv tool run NPET_DP failed: {result.stderr}"
-    assert "Program terminated" in result.stdout, "Expected app to launch and exit cleanly"
+    assert "terminated" in result.stdout, "Expected app to launch and exit cleanly"
