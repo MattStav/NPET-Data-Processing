@@ -103,7 +103,7 @@ def main_menu() -> None:
                 typer.echo("\nOpening outputs folder ...")
                 open_plot_outputs()
             case 0:
-                typer.echo("Program terminated")
+                typer.echo(f"Program {APP_NAME} terminated")
                 return
             case _:
                 typer.secho("Invalid choice", fg=typer.colors.RED)

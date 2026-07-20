@@ -13,11 +13,11 @@ def test_returns_when_no_files():
             "NPET_DP.workflows.one_epoch.user_file_select",
             side_effect=FileNotFoundError,
         ),
-        patch("NPET_DP.workflows.one_epoch.import_data") as mock_import_data,
+        patch("NPET_DP.workflows.one_epoch.NPETData.from_path") as mock_from_path,
         patch("NPET_DP.workflows.one_epoch.__plot_singular_data") as mock_plot,
     ):
         main_one_epoch()
-    mock_import_data.assert_not_called()
+    mock_from_path.assert_not_called()
     mock_plot.assert_not_called()
 
 

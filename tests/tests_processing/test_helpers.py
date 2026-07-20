@@ -157,7 +157,7 @@ def test_get_unit(original_unit, scale_iter, expected_unit):
 @pytest.mark.parametrize(
     "original_unit, scale_iter",
     (
-        pytest.param("fs", 1, id="past-finest"),
+        pytest.param("fs", 2, id="past-finest"),
         pytest.param("s", -1, id="past-coarsest"),
         pytest.param("fs", 100, id="far-past-finest"),
     ),
