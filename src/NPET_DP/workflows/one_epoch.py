@@ -1,4 +1,3 @@
-from NPET_DP.workflows.helpers import auto_range, histogram_plot_loop
 from pathlib import Path
 
 import numpy as np
@@ -11,6 +10,7 @@ from NPET_DP.framework.constants import FEMTO
 from NPET_DP.framework.file_selection import user_file_select
 from NPET_DP.framework.path_handler import get_plot_path
 from NPET_DP.processing.data_struct import NPETData
+from NPET_DP.workflows.helpers import auto_range, histogram_plot_loop
 
 
 def __plot_singular_data(data: NPETData, name: str) -> None:
