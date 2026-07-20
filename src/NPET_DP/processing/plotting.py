@@ -10,9 +10,9 @@ from NPET_DP.framework.path_handler import get_plot_path
 from NPET_DP.processing.data_struct import NPETData
 from NPET_DP.processing.helpers import (
     auto_scale_data,
+    auto_scale_num,
     get_unit,
     scale_data,
-    auto_scale_num,
     scale_num,
 )
 
