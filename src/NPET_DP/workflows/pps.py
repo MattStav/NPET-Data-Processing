@@ -15,7 +15,7 @@ from NPET_DP.framework.path_handler import get_plot_path
 def __plot_short(data: NPETData, name: str) -> None:
     """
     Show the data using a scatter plot.
-    :param data: Data to be plotted, the first column is seconds, the second column is delay.
+    :param data: Data to be plotted, as NPETData object.
     :param name: Name of the file.
     """
     typer.echo("Plotting PPS data...")
@@ -39,7 +39,7 @@ def __plot_short(data: NPETData, name: str) -> None:
 def __plot_long(data: NPETData, name: str) -> None:
     """
     Plot a large amount of PPS data in a scatter plot.
-    :param data: Data to be plotted, the first column is seconds, the second column is delay.
+    :param data: Data to be plotted, as NPETData object.
     :param name: Name of the file.
     """
     typer.echo("Plotting large PPS dataset...")
