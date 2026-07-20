@@ -4,7 +4,7 @@ import numpy as np
 import numpy.typing as npt
 import pytest
 
-from NPET_DP.epoch_processing.helper_funcs import (
+from NPET_DP.processing.helpers import (
     DATA_TYPE,
     auto_scale_data,
     auto_scale_num,

@@ -4,14 +4,14 @@ from pathlib import Path
 import pytest
 from unittest.mock import patch, call
 
-from NPET_DP.epoch_processing.pps import main_pps
+from NPET_DP.workflows.pps import main_pps
 from NPET_DP.framework.path_handler import get_plot_path
 
 
 def test_returns_when_no_files():
     """Test that the function returns when there is no file to process"""
     with patch(
-        "NPET_DP.epoch_processing.pps.user_file_select",
+        "NPET_DP.workflows.pps.user_file_select",
         side_effect=FileNotFoundError,
     ):
         main_pps()
@@ -24,13 +24,13 @@ def test_main_pps_creates_a_plot(data_dir: Path, tmp_path: Path, filename: str):
     test_file: Path = data_dir / filename
     with (
         patch(
-            "NPET_DP.epoch_processing.pps.user_file_select",
+            "NPET_DP.workflows.pps.user_file_select",
             return_value=test_file,
         ),
         patch("NPET_DP.framework.path_handler.get_path", return_value=tmp_path),
-        patch("NPET_DP.epoch_processing.pps.plt.show") as mock_show,
+        patch("NPET_DP.workflows.pps.plt.show") as mock_show,
         patch(
-            "NPET_DP.epoch_processing.pps.drift_removal_prompt",
+            "NPET_DP.workflows.pps.drift_removal_prompt",
             side_effect=lambda data: (data, 0),
         ),
     ):

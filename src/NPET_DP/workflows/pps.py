@@ -5,16 +5,16 @@ import typer
 from matplotlib import pyplot as plt
 from numpy.typing import NDArray
 
-from NPET_DP.epoch_processing.helper_funcs import (
+from NPET_DP.processing.helpers import (
     auto_scale_data,
     auto_scale_num,
     get_unit,
     import_data,
     validate_inputs,
 )
-from NPET_DP.epoch_processing.helper_plot import plot_time_deviation
-from NPET_DP.epoch_processing.helper_processing import is_continuous, process_overflow
-from NPET_DP.epoch_processing.helper_processing_prompted import drift_removal_prompt
+from NPET_DP.processing.plotting import plot_time_deviation
+from NPET_DP.processing.calculations import is_continuous, process_overflow
+from NPET_DP.workflows.helpers import drift_removal_prompt
 from NPET_DP.framework.file_selection import user_file_select
 from NPET_DP.framework.path_handler import get_plot_path
 

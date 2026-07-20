@@ -5,7 +5,7 @@ import numpy.typing as npt
 import typer
 from matplotlib import pyplot as plt
 
-from NPET_DP.epoch_processing.helper_funcs import import_data, validate_inputs
+from NPET_DP.processing.helpers import import_data, validate_inputs
 from NPET_DP.framework.config import config
 from NPET_DP.framework.constants import FEMTO
 from NPET_DP.framework.file_selection import user_file_select

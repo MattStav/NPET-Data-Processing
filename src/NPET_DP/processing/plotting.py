@@ -4,7 +4,7 @@ from matplotlib import pyplot as plt
 from matplotlib import ticker
 from numpy.typing import NDArray
 
-from NPET_DP.epoch_processing.helper_funcs import (
+from NPET_DP.processing.helpers import (
     auto_scale_data,
     get_unit,
     scale_data,

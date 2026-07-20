@@ -1,9 +1,8 @@
 import numpy as np
 
-from NPET_DP.epoch_processing.helper_processing import process_overflow
-from NPET_DP.epoch_processing.helper_funcs import (
+from NPET_DP.processing.calculations import process_overflow
+from NPET_DP.processing.helpers import (
     import_data,
-    auto_scale_data,
     auto_scale_num,
     get_unit,
 )

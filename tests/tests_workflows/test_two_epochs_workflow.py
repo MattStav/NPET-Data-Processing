@@ -1,11 +1,11 @@
-from unittest.mock import patch
+from pathlib import Path
 
 import numpy as np
 from numpy.typing import NDArray
-from NPET_DP.epoch_processing.helper_funcs import import_data, auto_scale_num, get_unit
-from pathlib import Path
 
-from NPET_DP.epoch_processing.helper_processing import (
+from NPET_DP.processing.helpers import import_data, auto_scale_num, get_unit
+
+from NPET_DP.processing.calculations import (
     discard_rows_until_first_col_match,
     calculate_delay,
     detect_signal,

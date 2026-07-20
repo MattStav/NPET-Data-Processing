@@ -5,9 +5,9 @@ from typing import Annotated, Optional
 
 import typer
 
-from NPET_DP.epoch_processing.one_epoch import main_one_epoch
-from NPET_DP.epoch_processing.pps import main_pps
-from NPET_DP.epoch_processing.two_epochs import main_two_epochs
+from NPET_DP.workflows.one_epoch import main_one_epoch
+from NPET_DP.workflows.pps import main_pps
+from NPET_DP.workflows.two_epochs import main_two_epochs
 from NPET_DP.framework.config import config
 from NPET_DP.framework.constants import APP_NAME, PACKAGE_NAME
 from NPET_DP.framework.path_handler import open_plot_outputs

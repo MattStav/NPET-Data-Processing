@@ -1,9 +1,8 @@
 import numpy as np
-import pytest
 from unittest.mock import patch, MagicMock
 
-from NPET_DP.epoch_processing.helper_funcs import DATA_TYPE
-from NPET_DP.epoch_processing.two_epochs import (
+from NPET_DP.processing.helpers import DATA_TYPE
+from NPET_DP.workflows.two_epochs import (
     main_two_epochs,
     __auto_range,
     __select_data_within_range,
@@ -13,32 +12,14 @@ from NPET_DP.epoch_processing.two_epochs import (
 from NPET_DP.framework.config import config
 
 
-@pytest.fixture
-def mock_config():
-    """Fixture to reset config between tests"""
-    original_frequency = config._frequency
-    original_min_delay = config._min_delay
-    original_max_delay = config._max_delay
-    original_sigma = config._sigma
-    config._frequency = 500
-    config._min_delay = 0.0
-    config._max_delay = 1000.0
-    config._sigma = 2.2
-    yield config
-    config._frequency = original_frequency
-    config._min_delay = original_min_delay
-    config._max_delay = original_max_delay
-    config._sigma = original_sigma
-
-
 def test_returns_when_no_files():
     """Test that the function returns when there is no file to process"""
     with (
         patch(
-            "NPET_DP.epoch_processing.two_epochs.user_file_select",
+            "NPET_DP.workflows.two_epochs.user_file_select",
             side_effect=FileNotFoundError,
         ),
-        patch("NPET_DP.epoch_processing.two_epochs.import_data") as mock_import_data,
+        patch("NPET_DP.workflows.two_epochs.import_data") as mock_import_data,
     ):
         main_two_epochs()
     mock_import_data.assert_not_called()
@@ -65,11 +46,11 @@ def test_select_data_within_range():
     assert np.array_equal(result["femto"], np.array([200, 300, 400]))
 
 
-@patch("NPET_DP.epoch_processing.two_epochs.plt")
-@patch("NPET_DP.epoch_processing.two_epochs.scale_num")
-@patch("NPET_DP.epoch_processing.two_epochs.auto_scale_num")
-@patch("NPET_DP.epoch_processing.two_epochs.scale_data")
-@patch("NPET_DP.epoch_processing.two_epochs.auto_scale_data")
+@patch("NPET_DP.workflows.two_epochs.plt")
+@patch("NPET_DP.workflows.two_epochs.scale_num")
+@patch("NPET_DP.workflows.two_epochs.auto_scale_num")
+@patch("NPET_DP.workflows.two_epochs.scale_data")
+@patch("NPET_DP.workflows.two_epochs.auto_scale_data")
 def test_plot_histogram(
     mock_auto_scale_data,
     mock_scale_data,
@@ -83,7 +64,8 @@ def test_plot_histogram(
     all_data = np.array([100, 200, 300])
     filtered = np.array([200, 300])
     config.sigma = 2.2
-    mock_auto_scale_data.return_value = (all_data[all_data != 200], 0)  # simplified non_filtered
+    # simplified non_filtered
+    mock_auto_scale_data.return_value = (all_data[all_data != 200], 0)
     mock_scale_data.return_value = filtered
     mock_auto_scale_num.side_effect = [
         (250.0, 0),  # Mean
@@ -95,11 +77,11 @@ def test_plot_histogram(
     # Mock np.exp and np.linspace to return non-empty arrays to avoid division by zero or empty max
     with (
         patch(
-            "NPET_DP.epoch_processing.two_epochs.np.exp",
+            "NPET_DP.workflows.two_epochs.np.exp",
             return_value=np.array([0.5, 1.0]),
         ),
         patch(
-            "NPET_DP.epoch_processing.two_epochs.np.linspace",
+            "NPET_DP.workflows.two_epochs.np.linspace",
             return_value=np.array([1, 2]),
         ),
     ):
@@ -108,9 +90,9 @@ def test_plot_histogram(
     mock_plt.savefig.assert_called_once()
 
 
-@patch("NPET_DP.epoch_processing.two_epochs.plt")
-@patch("NPET_DP.epoch_processing.two_epochs.scale_data")
-@patch("NPET_DP.epoch_processing.two_epochs.scale_num")
+@patch("NPET_DP.workflows.two_epochs.plt")
+@patch("NPET_DP.workflows.two_epochs.scale_data")
+@patch("NPET_DP.workflows.two_epochs.scale_num")
 def test_plot_histogram_empty_filtered(
     mock_scale_num,
     mock_scale_data,
@@ -138,8 +120,8 @@ def test_plot_histogram_empty_filtered(
     mock_scale_num.assert_not_called()
 
 
-@patch("NPET_DP.epoch_processing.two_epochs.show")
-@patch("NPET_DP.epoch_processing.two_epochs.scale_data")
+@patch("NPET_DP.workflows.two_epochs.show")
+@patch("NPET_DP.workflows.two_epochs.scale_data")
 def test_plot_all_delays_interactive(
     mock_scale_data,
     mock_show,

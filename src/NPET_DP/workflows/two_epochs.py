@@ -11,7 +11,7 @@ from bokeh.plotting import figure, show
 from matplotlib import pyplot as plt
 from numpy.typing import NDArray
 
-from NPET_DP.epoch_processing.helper_funcs import (
+from NPET_DP.processing.helpers import (
     auto_scale_data,
     auto_scale_num,
     check_data_structure,
@@ -21,14 +21,14 @@ from NPET_DP.epoch_processing.helper_funcs import (
     scale_num,
     validate_inputs,
 )
-from NPET_DP.epoch_processing.helper_plot import plot_time_deviation
-from NPET_DP.epoch_processing.helper_processing import (
+from NPET_DP.processing.plotting import plot_time_deviation
+from NPET_DP.processing.calculations import (
     calculate_delay,
     detect_signal,
     discard_rows_until_first_col_match,
     recursive_sigma_filter,
 )
-from NPET_DP.epoch_processing.helper_processing_prompted import drift_removal_prompt
+from NPET_DP.workflows.helpers import drift_removal_prompt
 from NPET_DP.framework.config import config
 from NPET_DP.framework.file_selection import user_file_select
 from NPET_DP.framework.path_handler import get_plot_path

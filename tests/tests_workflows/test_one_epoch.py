@@ -1,7 +1,7 @@
 from pathlib import Path
 from unittest.mock import patch
 
-from NPET_DP.epoch_processing.one_epoch import main_one_epoch
+from NPET_DP.workflows.one_epoch import main_one_epoch
 from NPET_DP.framework.config import config
 from NPET_DP.framework.path_handler import get_plot_path
 
@@ -10,11 +10,11 @@ def test_returns_when_no_files():
     """Test that the function returns when there is no file to process"""
     with (
         patch(
-            "NPET_DP.epoch_processing.one_epoch.user_file_select",
+            "NPET_DP.workflows.one_epoch.user_file_select",
             side_effect=FileNotFoundError,
         ),
-        patch("NPET_DP.epoch_processing.one_epoch.import_data") as mock_import_data,
-        patch("NPET_DP.epoch_processing.one_epoch.__plot_singular_data") as mock_plot,
+        patch("NPET_DP.workflows.one_epoch.import_data") as mock_import_data,
+        patch("NPET_DP.workflows.one_epoch.__plot_singular_data") as mock_plot,
     ):
         main_one_epoch()
     mock_import_data.assert_not_called()
@@ -27,11 +27,11 @@ def test_main_one_epoch_creates_a_plot(data_dir: Path, tmp_path: Path):
     config.frequency = 500  # Preset the frequency to avoid user input during the test
     with (
         patch(
-            "NPET_DP.epoch_processing.one_epoch.user_file_select",
+            "NPET_DP.workflows.one_epoch.user_file_select",
             return_value=test_file,
         ),
         patch("NPET_DP.framework.path_handler.get_path", return_value=tmp_path),
-        patch("NPET_DP.epoch_processing.one_epoch.plt.show") as mock_show,
+        patch("NPET_DP.workflows.one_epoch.plt.show") as mock_show,
     ):
         main_one_epoch()
         assert get_plot_path(f"single_{test_file.stem}").is_file()

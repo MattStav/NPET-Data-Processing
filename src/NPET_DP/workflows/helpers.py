@@ -2,8 +2,8 @@ import typer
 from click import Choice
 from numpy.typing import NDArray
 
-from NPET_DP.epoch_processing.helper_funcs import check_data_structure, validate_inputs
-from NPET_DP.epoch_processing.helper_processing import remove_drift
+from NPET_DP.processing.helpers import check_data_structure, validate_inputs
+from NPET_DP.processing.calculations import remove_drift
 
 
 @validate_inputs

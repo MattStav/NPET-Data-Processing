@@ -2,8 +2,8 @@ import numpy as np
 import numpy.typing as npt
 import pytest
 
-from NPET_DP.epoch_processing.helper_funcs import DATA_TYPE
-from NPET_DP.epoch_processing.helper_processing import (
+from NPET_DP.processing.helpers import DATA_TYPE
+from NPET_DP.processing.calculations import (
     calculate_delay,
     detect_signal,
     discard_rows_until_first_col_match,
