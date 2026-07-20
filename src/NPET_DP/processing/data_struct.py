@@ -2,7 +2,7 @@ from numpy.lib.recfunctions import unstructured_to_structured
 from pathlib import Path
 import numpy as np
 from numpy.typing import NDArray
-from pydantic import BaseModel, ConfigDict, model_validator, PrivateAttr
+from pydantic import BaseModel, ConfigDict, model_validator
 
 from NPET_DP.processing.calculations import (
     discard_rows_until_first_col_match,
