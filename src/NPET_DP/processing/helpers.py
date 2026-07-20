@@ -54,7 +54,7 @@ def check_data_structure(data: NDArray, arg_name: Optional[str] = None) -> None:
         raise ValueError(f"'{name}' missing fields: 'seconds, femto'")
 
 
-def import_data(path: Path, seconds_add: Optional[int] = None) -> NDArray:
+def import_data(path: Path, seconds_add: int = 0) -> NDArray:
     """
     Import data from the epoch output files,
     which should be in the format of: `int_sec frac_sec`.
@@ -74,7 +74,7 @@ def import_data(path: Path, seconds_add: Optional[int] = None) -> NDArray:
     frac_part[overflow_mask] = "0.0"
     seconds[overflow_mask] += 1
     # Add optional seconds offset
-    if seconds_add is not None:
+    if seconds_add:
         seconds += seconds_add
     # Convert to femtoseconds and remove the decimal part
     femto = np.array([int(v.replace("0.", "").ljust(15, "0")) for v in frac_part])
