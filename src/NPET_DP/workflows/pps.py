@@ -79,7 +79,7 @@ def __plot_long(data: NPETData, name: str) -> None:
     plt.show(block=False)
 
 
-def __plot_crossroad(data: NPETData, name: str) -> None:
+def __plot(data: NPETData, name: str) -> None:
     """
     Plot the PPS data, using a different plotting method depending on the size of the data.
     :param data: Data to be plotted as NPETData object.
@@ -105,7 +105,7 @@ def main_pps() -> None:
     data: NPETData = NPETData.from_path(pps_file_path)
     processed: NPETData = data.process_incremental_overflow()
     typer.echo()
-    __plot_crossroad(processed, name=pps_file_path.stem)
+    __plot(processed, name=pps_file_path.stem)
     # Plot Allan time deviation
     if not processed.is_seconds_continuous():
         typer.secho("Data not continuous, skipping TDEV!", fg=typer.colors.RED)
@@ -116,7 +116,5 @@ def main_pps() -> None:
     plot_time_deviation(drift_compensated.structured_arr, 1, name=pps_file_path.stem)
     if deg:
         typer.echo("Plotting PPS data after drift removal...")
-        __plot_crossroad(
-            drift_compensated,
-            name=f"{pps_file_path.stem} without pol deg {deg} drift",
-        )
+        name: str = f"{pps_file_path.stem} without pol deg {deg} drift"
+        __plot(drift_compensated, name=name)
