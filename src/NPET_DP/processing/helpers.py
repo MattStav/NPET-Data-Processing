@@ -6,7 +6,7 @@ from typing import Callable, Literal, Optional, ParamSpec, TypeVar, get_args
 import numpy as np
 from numpy.typing import NDArray
 
-_UNITS_TYPE = Literal["s", "ms", "us", "ns", "ps", "fs"]
+_UNITS_TYPE = Literal["s", "ms", "us", "ns", "ps", "fs", "as"]
 _UNITS_SCALE: tuple[_UNITS_TYPE] = get_args(_UNITS_TYPE)
 DATA_TYPE = [("seconds", np.int_), ("femto", np.int_)]
 
