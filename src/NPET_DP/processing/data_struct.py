@@ -1,26 +1,27 @@
-from numpy.lib.recfunctions import unstructured_to_structured
 from pathlib import Path
+
 import numpy as np
+from numpy.lib.recfunctions import unstructured_to_structured
 from numpy.typing import NDArray
 from pydantic import BaseModel, ConfigDict, model_validator
 
 from NPET_DP.processing.calculations import (
-    discard_rows_until_first_col_match,
     calculate_delay,
     detect_signal,
-    recursive_sigma_filter,
-    process_overflow,
+    discard_rows_until_first_col_match,
     is_continuous,
+    process_overflow,
+    recursive_sigma_filter,
     remove_drift,
 )
 from NPET_DP.processing.helpers import (
-    import_data,
-    DATA_TYPE,
-    check_data_structure,
     _UNITS_TYPE,
+    DATA_TYPE,
     auto_scale_data,
-    get_unit,
     auto_scale_num,
+    check_data_structure,
+    get_unit,
+    import_data,
 )
 
 
