@@ -1,4 +1,3 @@
-import math
 import webbrowser
 from pathlib import Path
 from typing import NamedTuple
@@ -15,15 +14,13 @@ from NPET_DP.framework.config import config
 from NPET_DP.framework.file_selection import user_file_select
 from NPET_DP.framework.path_handler import get_plot_path
 from NPET_DP.processing.data_struct import NPETData
-from NPET_DP.processing.helpers import (
-    auto_scale_data,
-    auto_scale_num,
-    get_unit,
-    scale_data,
-    scale_num,
-)
+from NPET_DP.processing.helpers import get_unit, auto_scale_data
 from NPET_DP.processing.plotting import plot_time_deviation
-from NPET_DP.workflows.helpers import drift_removal_prompt
+from NPET_DP.workflows.helpers import (
+    drift_removal_prompt,
+    auto_range,
+    histogram_plot_loop,
+)
 
 _Data = NamedTuple("_Data", [("data_start", NPETData), ("data_stop", NPETData)])
 
@@ -60,7 +57,8 @@ def __plot_all_scatter(data: NPETData, signal: tuple[NDArray[np.bool_], ...]) ->
     """
     typer.echo("\nPlotting all the calculated delay data in interactive mode")
     output_file(get_plot_path("bokeh_plot", suffix="html"), mode="inline")
-    sc_femto, unit = data.sc_femto
+    sc_femto, sc_iter = auto_scale_data(data.femto, 2)
+    unit = get_unit("fs", sc_iter)
     fig = figure(
         title="Measured delay between START and STOP data",
         x_axis_label="Event Number [n]",
@@ -130,113 +128,6 @@ def __plot_all_scatter(data: NPETData, signal: tuple[NDArray[np.bool_], ...]) ->
         typer.secho("Couldn't open the graph in interactive mode.", fg=typer.colors.RED)
 
 
-def __auto_range(delays: NPETData, signal: NDArray[np.bool_]) -> None:
-    """
-    Automatically set the x-axis range of the histogram to focus on the detected signal.
-    :param delays: Data to be filtered as NPETData object.
-    :param signal: Boolean mask indicating the detected signal.
-    """
-    typer.echo("\nAuto-ranging the histogram plot to focus on the detected signal")
-    signal_range = delays.define_signal_range(signal)
-    config.min_delay = signal_range[0]
-    config.max_delay = signal_range[1]
-    r_min, n_min = auto_scale_num(config.min_delay)
-    r_max, n_max = auto_scale_num(config.max_delay)
-    u_min = get_unit("fs", n_min)
-    u_max = get_unit("fs", n_max)
-    typer.echo(f"Range set to min: {r_min:.4f} {u_min}, max: {r_max:.4f} {u_max}")
-
-
-def __select_data_within_range(data: NPETData) -> NPETData:
-    """
-    Select data within a specified range, uses the values stored in config.py.
-    :param data: The data to be filtered, in the FW standard format.
-    :return: Filtered data, in the FW standard format.
-    """
-    mask = (config.min_delay <= data.femto) & (data.femto <= config.max_delay)
-    return data.filter_range(mask)
-
-
-def __plot_histogram(
-    *,
-    all_data: NPETData,
-    signal_data: NPETData,
-    name: str,
-    bin_size_fs: int = 10_000,  # 0.01 ns
-) -> None:
-    """
-    Plot a histogram of the measured data.
-    :param all_data: All measured data as a NPETData object.
-    :param signal_data: Signal data as an NPETData object.
-    :param name: Name of the plot.
-    :param bin_size_fs: Bin size in fs.
-    """
-    typer.echo("\nPlotting histogram of the measured delays")
-    # Difference between the max and min delay
-    delay_spread: float = all_data.femto.max() - all_data.femto.min()
-    if delay_spread > 50_000_000:
-        # If there's too much data (>50 ns), then adjust the bin size to match 1000 bins
-        bin_size: float = delay_spread / 1000
-    else:
-        # Otherwise, use the supplied bin size in femtoseconds
-        bin_size: float = bin_size_fs
-    typer.echo(f"Histogram bin size = {bin_size:.2f} fs")
-    bin_count: int = math.floor(delay_spread / bin_size)
-    typer.echo(f"Histogram bin count = {bin_count}")
-    # Scale the data for plotting
-    bgr_data = all_data.femto_not_in(signal_data)
-    sc_bgr, sc_iter = auto_scale_data(bgr_data.femto)
-    # Create bins based on bin size
-    bins = np.linspace(sc_bgr.min(), sc_bgr.max(), bin_count)
-    plt.clf()
-    hist_data = []
-    hist_labels = []
-    hist_colors = []
-    # If there is data denoting the signal, plot it
-    if len(signal_data) != 0:
-        sc_signal = scale_data(signal_data.femto, sc_iter)
-        hist_data.append(sc_signal)
-        hist_labels.append(f"Recursive Gauss filtered ({config.sigma}σ)")
-        hist_colors.append("red")
-    hist_data.append(sc_bgr)
-    hist_labels.append("Other measured data")
-    hist_colors.append("blue")
-    counts, _, _ = plt.hist(
-        hist_data,
-        bins=bins,
-        color=hist_colors,
-        alpha=0.7,
-        label=hist_labels,
-        stacked=True,
-    )
-    if len(signal_data) != 0:
-        # Add the Gaussian curve
-        sc_mean, sc_mean_iter = auto_scale_num(signal_data.femto.mean())
-        sc_std, sc_std_iter = auto_scale_num(signal_data.femto.std())
-        x = np.linspace(sc_bgr.min(), sc_bgr.max(), bin_count * 10)
-        # Correction for the STD being in different units
-        std_correct = scale_num(sc_std, sc_mean_iter - sc_std_iter)
-        gaussian = np.exp(-((x - sc_mean) ** 2) / (2 * std_correct**2))
-        gaussian *= np.max(counts) / np.max(gaussian)
-        plt.plot(
-            x,
-            gaussian,
-            "k",
-            linewidth=1,
-            label=f"Gaussian \n"
-            f"μ={sc_mean:.3f} {get_unit('fs', sc_mean_iter)}\n"
-            f"σ={sc_std:.3f} {get_unit('fs', sc_std_iter)}",
-            alpha=0.5,
-        )
-    plt.title(f"Histogram - {name}")
-    plt.xlabel(f"Delay [{get_unit('fs', sc_iter)}]")
-    plt.ylabel("Counts [n]")
-    plt.grid(True)
-    plt.legend()
-    plt.savefig(get_plot_path(f"histogram_{name}"))
-    plt.show(block=False)
-
-
 def main_two_epochs() -> None:
     """Process data from two epochs, used to compare measurements from two different epochs."""
     col = typer.colors
@@ -269,37 +160,14 @@ def main_two_epochs() -> None:
             return
     elif len(autodetection) == 1:
         typer.secho("Autodetect found a single return signal!", fg=col.GREEN)
-        __auto_range(delays, autodetection[0])
+        auto_range(delays, autodetection[0])
     elif len(autodetection) > 1:
         typer.secho(f"Autodetect found {len(autodetection)} signals!", fg=col.YELLOW)
     __plot_all_scatter(delays, autodetection)
-    while True:
-        sel_del: NPETData = __select_data_within_range(delays)
-        # Apply the recursive sigma filter to the data
-        sigma_del, sigma_i = sel_del.recursive_sigma_filter(config.sigma)
-        typer.echo(f"\nRecursive {config.sigma} sigma filter results:")
-        sc_mean, mean_unit = sigma_del.sc_mean
-        sc_std, std_unit = sigma_del.sc_std
-        typer.secho(f"Mean: {sc_mean:.4f} {mean_unit}", fg=typer.colors.CYAN)
-        typer.secho(f"STD: {sc_std:.4f} {std_unit}", fg=typer.colors.CYAN)
-        typer.echo(f"Accepted values in filtering = {len(sigma_del)}")
-        typer.echo(f"Rejected values = {len(sel_del) - len(sigma_del)}")
-        typer.echo(f"Number of iterations = {sigma_i}")
-        ret_rate: float = len(sigma_del) / len(delays)
-        typer.secho(f"Return rate: {ret_rate:.2%}", fg=typer.colors.CYAN)
-        # Plot the histogram of the filtered data
-        __plot_histogram(
-            all_data=sel_del,
-            signal_data=sigma_del if sigma_i != 1 else NPETData.empty(),
-            name=stop_file.stem,
-        )
-        if not typer.confirm("Do you wish to adjust the x-axis range?"):
-            break
-        config.prompt_delay("min", validate=False)
-        config.prompt_delay("max")
-    no_drift, deg = drift_removal_prompt(sigma_del)
+    sigma_filtered: NPETData = histogram_plot_loop(delays, stop_file.stem)
+    no_drift, deg = drift_removal_prompt(sigma_filtered)
     name: str = stop_file.stem
     if deg > 0:
         name += f" without pol deg {deg} drift"
-    plot_time_deviation(no_drift.structured_arr, frequency, name)
+    plot_time_deviation(no_drift, frequency, name)
     plt.close()

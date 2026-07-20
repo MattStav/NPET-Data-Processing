@@ -113,7 +113,7 @@ def main_pps() -> None:
     typer.echo()
     typer.echo("Plotting TDEV...")
     drift_compensated, deg = drift_removal_prompt(processed)
-    plot_time_deviation(drift_compensated.structured_arr, 1, name=pps_file_path.stem)
+    plot_time_deviation(drift_compensated, 1, name=pps_file_path.stem)
     if deg:
         typer.echo("Plotting PPS data after drift removal...")
         name: str = f"{pps_file_path.stem} without pol deg {deg} drift"
