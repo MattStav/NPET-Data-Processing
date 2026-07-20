@@ -115,8 +115,24 @@ def histogram_plot_loop(data: NPETData, name: str) -> NPETData:
             name=name,
             bin_count=bin_count,
         )
-        if not typer.confirm("Do you wish to adjust the x-axis range?"):
+        redraw = typer.prompt(
+            "Rescale x-axis?",
+            type=Choice(["manual", "auto", "no"]),
+            default="no",
+            show_choices=True,
+        )
+        if redraw == "no":
             break
-        config.prompt_delay("min", validate=False)
-        config.prompt_delay("max")
+        elif redraw == "manual":
+            config.prompt_delay("min", validate=False)
+            config.prompt_delay("max")
+            continue
+        # elif "auto"
+        autodetection = selection.detect_signal(percentage_threshold=2)
+        typer.echo(f"Autodetection found {len(autodetection)} signals")
+        if len(autodetection) != 1:
+            typer.secho("Failed to autodetect a single signal!", fg=typer.colors.RED)
+            continue
+        auto_range(selection, autodetection[0])
+
     return sigma_data
