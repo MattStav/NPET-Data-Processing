@@ -4,11 +4,11 @@ import numpy as np
 import typer
 from matplotlib import pyplot as plt
 
-from NPET_DP.processing.data_struct import NPETData
 from NPET_DP.framework.config import config
 from NPET_DP.framework.constants import FEMTO
 from NPET_DP.framework.file_selection import user_file_select
 from NPET_DP.framework.path_handler import get_plot_path
+from NPET_DP.processing.data_struct import NPETData
 
 
 def __plot_singular_data(data: NPETData, name: str) -> None:

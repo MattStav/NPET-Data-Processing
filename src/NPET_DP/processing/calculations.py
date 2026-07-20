@@ -2,12 +2,12 @@ import numpy as np
 from numpy.lib.recfunctions import unstructured_to_structured
 from numpy.typing import NDArray
 
+from NPET_DP.framework.constants import FEMTO
 from NPET_DP.processing.helpers import (
     DATA_TYPE,
     check_data_structure,
     validate_inputs,
 )
-from NPET_DP.framework.constants import FEMTO
 
 
 @validate_inputs
