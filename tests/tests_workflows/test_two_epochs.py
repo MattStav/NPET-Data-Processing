@@ -1,14 +1,14 @@
+from NPET_DP.processing.plotting import plot_histogram
 import numpy as np
 from unittest.mock import patch, MagicMock
 
 from NPET_DP.processing.data_struct import NPETData
-from NPET_DP.workflows.two_epochs import (
-    main_two_epochs,
-    __auto_range,
-    __select_data_within_range,
-    __plot_histogram,
-    __plot_all_scatter,
+from NPET_DP.workflows.helpers import (
+    auto_range,
+    select_data_within_range,
+    get_bin_count,
 )
+from NPET_DP.workflows.two_epochs import main_two_epochs, __plot_all_scatter
 from NPET_DP.framework.config import config
 
 
@@ -32,7 +32,7 @@ def test_auto_range():
         femto=np.array([100, 200, 300, 400, 500]),
     )
     mask = np.array([False, True, True, True, False])
-    __auto_range(delays, mask)
+    auto_range(delays, mask)
     assert config.min_delay == -340.0
     assert config.max_delay == 1260.0
 
@@ -45,15 +45,15 @@ def test_select_data_within_range():
         seconds=np.array([1, 2, 3, 4, 5]),
         femto=np.array([100, 200, 300, 400, 500]),
     )
-    result = __select_data_within_range(data)
+    result = select_data_within_range(data)
     assert np.array_equal(result.femto, np.array([200, 300, 400]))
 
 
-@patch("NPET_DP.workflows.two_epochs.plt")
-@patch("NPET_DP.workflows.two_epochs.scale_num")
-@patch("NPET_DP.workflows.two_epochs.auto_scale_num")
-@patch("NPET_DP.workflows.two_epochs.scale_data")
-@patch("NPET_DP.workflows.two_epochs.auto_scale_data")
+@patch("NPET_DP.processing.plotting.plt")
+@patch("NPET_DP.processing.plotting.scale_num")
+@patch("NPET_DP.processing.plotting.auto_scale_num")
+@patch("NPET_DP.processing.plotting.scale_data")
+@patch("NPET_DP.processing.plotting.auto_scale_data")
 def test_plot_histogram(
     mock_auto_scale_data,
     mock_scale_data,
@@ -86,24 +86,30 @@ def test_plot_histogram(
     # Just check if it runs without error and calls plt.show
     mock_plt.hist.return_value = (np.array([1, 1]), np.array([1, 2, 3]), MagicMock())
     # Mock np.exp and np.linspace to return non-empty arrays to avoid division by zero or empty max
+    bin_count = get_bin_count(all_data)
     with (
         patch(
-            "NPET_DP.workflows.two_epochs.np.exp",
+            "NPET_DP.processing.plotting.np.exp",
             return_value=np.array([0.5, 1.0]),
         ),
         patch(
-            "NPET_DP.workflows.two_epochs.np.linspace",
+            "NPET_DP.processing.plotting.np.linspace",
             return_value=np.array([1, 2]),
         ),
     ):
-        __plot_histogram(all_data=all_data, signal_data=filtered, name="test")
+        plot_histogram(
+            all_data=all_data,
+            signal_data=filtered,
+            name="test",
+            bin_count=bin_count,
+        )
     mock_plt.show.assert_called_once()
     mock_plt.savefig.assert_called_once()
 
 
-@patch("NPET_DP.workflows.two_epochs.plt")
-@patch("NPET_DP.workflows.two_epochs.scale_data")
-@patch("NPET_DP.workflows.two_epochs.scale_num")
+@patch("NPET_DP.processing.plotting.plt")
+@patch("NPET_DP.processing.plotting.scale_data")
+@patch("NPET_DP.processing.plotting.scale_num")
 def test_plot_histogram_empty_filtered(
     mock_scale_num,
     mock_scale_data,
@@ -128,7 +134,13 @@ def test_plot_histogram_empty_filtered(
         np.array([100, 200, 300]),
         MagicMock(),
     )
-    __plot_histogram(all_data=all_data, signal_data=filtered, name="test_empty")
+    bin_count = get_bin_count(all_data)
+    plot_histogram(
+        all_data=all_data,
+        signal_data=filtered,
+        name="test_empty",
+        bin_count=bin_count,
+    )
     mock_plt.show.assert_called_once()
     mock_plt.savefig.assert_called_once()
     # Ensure it didn't try to calculate mean/std of empty filtered array

@@ -63,7 +63,7 @@ def select_data_within_range(data: NPETData) -> NPETData:
     return data.filter_range(mask)
 
 
-def get_bin_count(data: NPETData, target_bin_size_fs: int) -> int:
+def get_bin_count(data: NPETData, target_bin_size_fs: int = 10_000) -> int:
     """
     Calculate the number of bins for a histogram based on the data and target bin size.
     :param data: Data to calculate the bin count for.
@@ -108,7 +108,7 @@ def histogram_plot_loop(data: NPETData, name: str) -> NPETData:
         typer.secho(f"Return rate: {ret_rate:.2%}", fg=typer.colors.CYAN)
         # Plot the histogram of the filtered data
         typer.echo("\nPlotting histogram of the measured delays")
-        bin_count = get_bin_count(selection, 10_000)
+        bin_count = get_bin_count(selection)
         plot_histogram(
             all_data=selection,
             signal_data=sigma_data if sigma_i != 1 else NPETData.empty(),
