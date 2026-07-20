@@ -7,7 +7,7 @@ from NPET_DP.workflows.two_epochs import (
     __auto_range,
     __select_data_within_range,
     __plot_histogram,
-    __plot_all_delays_interactive,
+    __plot_all_scatter,
 )
 from NPET_DP.framework.config import config
 
@@ -132,5 +132,5 @@ def test_plot_all_delays_interactive(
     data = np.array([100, 200])
     masks = (np.array([True, False]),)
     mock_scale_data.return_value = (data, 0)
-    __plot_all_delays_interactive(data, masks)
+    __plot_all_scatter(data, masks)
     mock_show.assert_called_once()

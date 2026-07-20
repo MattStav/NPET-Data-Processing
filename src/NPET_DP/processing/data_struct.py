@@ -105,18 +105,28 @@ class NPETData(BaseModel):
         check_data_structure(structured_arr)
         return cls(seconds=structured_arr["seconds"], femto=structured_arr["femto"])
 
-    def discard_rows_until_ref_match(self, data_ref: NDArray) -> "NPETData":
+    @classmethod
+    def empty(cls) -> "NPETData":
+        """Create an empty NPETData object."""
+        return cls(
+            seconds=np.array([], dtype=np.int_), femto=np.array([], dtype=np.int_)
+        )
+
+    def discard_rows_until_ref_match(
+        self,
+        data_ref: "NPETData",
+    ) -> tuple["NPETData", int]:
         """
         Discard rows from the data until the first row of the first column matches the reference data.
         :param data_ref: Reference data, the first row of the first column is used to match.
         """
-        ret, _ = discard_rows_until_first_col_match(
+        ret, discarded = discard_rows_until_first_col_match(
             data_to_process=self.structured_arr,
-            data_ref=data_ref,
+            data_ref=data_ref.structured_arr,
         )
-        return NPETData.from_structured_arr(ret)
+        return NPETData.from_structured_arr(ret), discarded
 
-    def calc_delay_start(self, *, stop: NDArray, frequency: int) -> "NPETData":
+    def calc_delay_start(self, *, stop: "NPETData", frequency: int) -> "NPETData":
         """
         Calculate the delay between this data (start) and the given stop data.
         :param stop: Stop data to calculate the delay against
@@ -125,12 +135,12 @@ class NPETData(BaseModel):
         """
         ret = calculate_delay(
             data_start=self.structured_arr,
-            data_stop=stop,
+            data_stop=stop.structured_arr,
             frequency=frequency,
         )
         return NPETData.from_structured_arr(ret)
 
-    def calc_delay_stop(self, *, start: NDArray, frequency: int) -> "NPETData":
+    def calc_delay_stop(self, *, start: "NPETData", frequency: int) -> "NPETData":
         """
         Calculate the delay between the given start data and this data (stop).
         :param start: Start data to calculate the delay against
@@ -138,7 +148,7 @@ class NPETData(BaseModel):
         :return: NPETData of the calculated delays
         """
         ret = calculate_delay(
-            data_start=start,
+            data_start=start.structured_arr,
             data_stop=self.structured_arr,
             frequency=frequency,
         )
@@ -192,19 +202,19 @@ class NPETData(BaseModel):
         self,
         sigma_mult: float,
         max_iter: int = 100,
-    ) -> "NPETData":
+    ) -> tuple["NPETData", int]:
         """
         Perform recursive sigma filtering on the data.
         :param sigma_mult: The sigma multiplier for the filtering
         :param max_iter: The maximum number of iterations
-        :return: NPETData object with filtered data
+        :return: NPETData object with filtered data and the number of iterations
         """
-        res, _ = recursive_sigma_filter(
+        res, sig_iter = recursive_sigma_filter(
             self.structured_arr,
             sigma_mult=sigma_mult,
             max_iter=max_iter,
         )
-        return NPETData.from_structured_arr(res)
+        return NPETData.from_structured_arr(res), sig_iter
 
     def process_incremental_overflow(self) -> "NPETData":
         """Process the data to handle incremental overflows."""
@@ -223,3 +233,14 @@ class NPETData(BaseModel):
         """
         no_drift = remove_drift(self.structured_arr, deg=pol_deg)
         return NPETData.from_structured_arr(no_drift)
+
+    def femto_not_in(self, other: "NPETData") -> "NPETData":
+        """
+        Return a new NPETData object containing only the rows that are not present in the other NPETData object.
+        :param other: The other NPETData object to compare against.
+        :return: NPETData object with rows not present in the other object.
+        """
+        mask = ~np.isin(self.femto, other.femto)
+        filtered_seconds = self.seconds[mask]
+        filtered_femto = self.femto[mask]
+        return NPETData(seconds=filtered_seconds, femto=filtered_femto)
