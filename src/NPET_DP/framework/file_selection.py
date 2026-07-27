@@ -9,6 +9,7 @@ import typer
 from NPET_DP.framework.config import config
 
 _COLUMN_GAP: int = 2
+_ROWS_PER_PAGE: int = 5
 _DATETIME_PATTERN: re.Pattern[str] = re.compile(r"\d{8}_\d{6}")
 
 
@@ -43,11 +44,11 @@ def __format_stem(stem: str) -> str:
     return _DATETIME_PATTERN.sub(format_match, stem).replace("_", " ")
 
 
-def __print_file_options(files: tuple[Path, ...]) -> None:
+def __build_entries(files: tuple[Path, ...]) -> tuple[list[str], int, int]:
     """
-    Print the numbered file options in as many columns as fit the terminal width,
-    filling columns top-to-bottom before moving to the next column (like `ls`).
+    Build the numbered entry labels and figure out how many columns fit the terminal width.
     :param files: Files to list.
+    :return: Tuple of (entries, entry width including a gap, number of columns).
     """
     index_width: int = len(str(len(files)))
     entries: list[str] = [
@@ -57,18 +58,36 @@ def __print_file_options(files: tuple[Path, ...]) -> None:
     entry_width: int = max(len(entry) for entry in entries) + _COLUMN_GAP
     terminal_width: int = shutil.get_terminal_size(fallback=(80, 24)).columns
     num_columns: int = max(1, min(len(entries), terminal_width // entry_width))
-    num_rows: int = -(-len(entries) // num_columns)  # Ceiling division
+    return entries, entry_width, num_columns
 
+
+def __print_file_options_page(
+    entries: list[str],
+    entry_width: int,
+    num_columns: int,
+    page: int,
+) -> None:
+    """
+    Print one page (at most `_ROWS_PER_PAGE` rows) of the numbered file options,
+    filling columns top-to-bottom before moving to the next column (like `ls`).
+    :param entries: All numbered entry labels.
+    :param entry_width: Column width including a gap.
+    :param num_columns: Number of columns to lay entries out in.
+    :param page: Zero-based page index to print.
+    """
+    page_size: int = num_columns * _ROWS_PER_PAGE
+    page_entries: list[str] = entries[page * page_size : (page + 1) * page_size]
+    num_rows: int = -(-len(page_entries) // num_columns)  # Ceiling division
     for row in range(num_rows):
         line_parts: list[str] = []
         for col in range(num_columns):
             index = col * num_rows + row
-            if index < len(entries):
+            if index < len(page_entries):
                 is_last_column = col == num_columns - 1
                 line_parts.append(
-                    entries[index]
+                    page_entries[index]
                     if is_last_column
-                    else entries[index].ljust(entry_width)
+                    else page_entries[index].ljust(entry_width)
                 )
         typer.echo("".join(line_parts))
 
@@ -99,12 +118,32 @@ def user_file_select(
         typer.echo(f"Automatically selected sole {file_desc} file: {files[0]}")
         return files[0]
     # Otherwise let the user choose from the available files
+    entries, entry_width, num_columns = __build_entries(files)
+    page_size: int = num_columns * _ROWS_PER_PAGE
+    total_pages: int = -(-len(entries) // page_size)  # Ceiling division
+    page: int = 0
+    prompt_text: str = "Insert number of your selection"
+    if total_pages > 1:
+        prompt_text += " (-1: previous page, -2: next page)"
     typer.echo(f"Select {file_desc} from:")
-    __print_file_options(files)
+    __print_file_options_page(entries, entry_width, num_columns, page)
     while True:
-        # Subtract 1 to make the index 0-based
-        choice: int = typer.prompt("Insert number of your selection", type=int) - 1
+        choice: int = typer.prompt(prompt_text, type=int)
+        if choice == -1:
+            if page > 0:
+                page -= 1
+            __print_file_options_page(entries, entry_width, num_columns, page)
+            continue
+        if choice == -2:
+            if page < total_pages - 1:
+                page += 1
+            __print_file_options_page(entries, entry_width, num_columns, page)
+            continue
+        if choice <= 0:
+            typer.secho("Invalid choice!", fg=typer.colors.RED)
+            continue
         try:
-            return files[choice]
+            # Subtract 1 to make the index 0-based
+            return files[choice - 1]
         except IndexError:
             typer.secho("Invalid choice!", fg=typer.colors.RED)
