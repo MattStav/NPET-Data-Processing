@@ -30,7 +30,10 @@ def __print_file_options(files: tuple[Path, ...]) -> None:
     :param files: Files to list.
     """
     line_prefix: str = "  "
-    entries: list[str] = [f"{i:>{len(files)}}: {file.stem}" for i, file in enumerate(files, 1)]
+    entries: list[str] = [
+        f"{i:>{len(files)}}: {file.stem.replace('_', ' ')}"
+        for i, file in enumerate(files, 1)
+    ]
     entry_width: int = max(len(entry) for entry in entries) + _COLUMN_GAP
     terminal_width: int = shutil.get_terminal_size(fallback=(80, 24)).columns
     available_width: int = max(entry_width, terminal_width - len(line_prefix))
@@ -43,7 +46,11 @@ def __print_file_options(files: tuple[Path, ...]) -> None:
             index = col * num_rows + row
             if index < len(entries):
                 is_last_column = col == num_columns - 1
-                line_parts.append(entries[index] if is_last_column else entries[index].ljust(entry_width))
+                line_parts.append(
+                    entries[index]
+                    if is_last_column
+                    else entries[index].ljust(entry_width)
+                )
         typer.echo(line_prefix + "".join(line_parts))
 
 
