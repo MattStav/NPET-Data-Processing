@@ -1,4 +1,6 @@
+import re
 import shutil
+from datetime import datetime
 from pathlib import Path
 from typing import Iterable
 
@@ -7,6 +9,7 @@ import typer
 from NPET_DP.framework.config import config
 
 _COLUMN_GAP: int = 2
+_DATETIME_PATTERN: re.Pattern[str] = re.compile(r"\d{8}_\d{6}")
 
 
 def __get_data_files(ignored_files: Iterable[Path]) -> tuple[Path, ...]:
@@ -24,6 +27,22 @@ def __get_data_files(ignored_files: Iterable[Path]) -> tuple[Path, ...]:
     )
 
 
+def __format_stem(stem: str) -> str:
+    """
+    Replace any `YYYYMMDD_HHMMSS` timestamp in the stem with `dd.mm.yyyy hh:mm:ss`,
+    then turn remaining underscores into spaces.
+    :param stem: File stem to format.
+    :return: Formatted stem.
+    """
+
+    def format_match(match: re.Match[str]) -> str:
+        return datetime.strptime(match.group(), "%Y%m%d_%H%M%S").strftime(
+            "%d.%m.%Y %H:%M:%S"
+        )
+
+    return _DATETIME_PATTERN.sub(format_match, stem).replace("_", " ")
+
+
 def __print_file_options(files: tuple[Path, ...]) -> None:
     """
     Print the numbered file options in as many columns as fit the terminal width,
@@ -32,7 +51,7 @@ def __print_file_options(files: tuple[Path, ...]) -> None:
     """
     index_width: int = len(str(len(files)))
     entries: list[str] = [
-        f"{i:>{index_width}}: {file.stem.replace('_', ' ')}"
+        f"{i:>{index_width}}: {__format_stem(file.stem)}"
         for i, file in enumerate(files, 1)
     ]
     entry_width: int = max(len(entry) for entry in entries) + _COLUMN_GAP
