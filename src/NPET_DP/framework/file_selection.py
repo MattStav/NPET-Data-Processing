@@ -18,7 +18,8 @@ def __get_data_files(ignored_files: Iterable[Path]) -> tuple[Path, ...]:
     return tuple(
         sorted(
             (f for f in config.input_data_dir.glob("*.out") if f not in ignored_files),
-            key=lambda p: p.stem,
+            key=lambda p: p.stat().st_mtime,
+            reverse=True,
         )
     )
 
