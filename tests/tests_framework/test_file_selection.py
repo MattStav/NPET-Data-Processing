@@ -1,5 +1,6 @@
+import os
+import time
 from pathlib import Path
-from typing import cast
 from unittest.mock import patch
 
 import pytest
@@ -10,13 +11,15 @@ from NPET_DP.framework.file_selection import user_file_select
 
 @pytest.fixture()
 def _test_files(tmp_path: Path) -> tuple[Path, Path]:
-    """Fixture to create multiple .out files for testing."""
-    files: list[Path] = [tmp_path / "first.out", tmp_path / "second.out"]
-    for f in files:
+    """Fixture to create two .out files with distinct mtimes, returned newest-first
+    to match the newest-to-oldest sort order used by user_file_select."""
+    older, newer = tmp_path / "first.out", tmp_path / "second.out"
+    for f in (older, newer):
         f.write_text("dummy", encoding="utf-8")
-    files = sorted(files, key=lambda p: p.name)
-    files_t: tuple[Path, Path] = cast(tuple[Path, Path], tuple(files))
-    return files_t
+    now = time.time()
+    os.utime(older, (now - 60, now - 60))
+    os.utime(newer, (now, now))
+    return newer, older
 
 
 def test_user_file_select_raises_when_no_files_and_user_quits(tmp_path, monkeypatch):
@@ -80,3 +83,17 @@ def test_user_file_select_ignore_files(
     monkeypatch.setattr(config, "input_data_dir", tmp_path)
     result: Path = user_file_select(ignored_files=[_test_files[0]])
     assert result == _test_files[1]
+
+
+def test_user_file_select_formats_embedded_timestamp(tmp_path, monkeypatch, capsys):
+    """Test that a YYYYMMDD_HHMMSS timestamp in a file name is displayed as dd.mm.yyyy hh:mm:ss."""
+    monkeypatch.setattr(config, "input_data_dir", tmp_path)
+    (tmp_path / "scan_20260723_134917.out").write_text("dummy", encoding="utf-8")
+    (tmp_path / "scan_20260101_080000.out").write_text("dummy", encoding="utf-8")
+    with patch("typer.prompt", return_value=1):
+        user_file_select()
+    output = capsys.readouterr().out
+    assert "23.07.2026 13:49:17" in output
+    assert "01.01.2026 08:00:00" in output
+    assert "20260723_134917" not in output
+    assert "20260101_080000" not in output
