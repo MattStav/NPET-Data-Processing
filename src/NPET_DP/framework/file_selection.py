@@ -122,7 +122,7 @@ def user_file_select(
     page_size: int = num_columns * _ROWS_PER_PAGE
     total_pages: int = -(-len(entries) // page_size)  # Ceiling division
     page: int = 0
-    prompt_text: str = "Insert number of your selection"
+    prompt_text: str = "Insert number of your selection (0: enter filename manually)"
     if total_pages > 1:
         prompt_text += " (-1: previous page, -2: next page)"
     typer.echo(f"Select {file_desc} from:")
@@ -139,7 +139,17 @@ def user_file_select(
                 page += 1
             __print_file_options_page(entries, entry_width, num_columns, page)
             continue
-        if choice <= 0:
+        if choice == 0:
+            manual_path: Path = Path(typer.prompt("Enter file path")).expanduser()
+            if not manual_path.is_absolute():
+                manual_path = config.input_data_dir / manual_path
+            if not manual_path.suffix:
+                manual_path = manual_path.with_suffix(".out")
+            if manual_path.is_file():
+                return manual_path
+            typer.secho(f"File not found: {manual_path}", fg=typer.colors.RED)
+            continue
+        if choice < 0:
             typer.secho("Invalid choice!", fg=typer.colors.RED)
             continue
         try:
