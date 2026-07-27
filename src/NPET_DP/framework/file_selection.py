@@ -1,9 +1,12 @@
+import shutil
 from pathlib import Path
 from typing import Iterable
 
 import typer
 
 from NPET_DP.framework.config import config
+
+_COLUMN_GAP: int = 2
 
 
 def __get_data_files(ignored_files: Iterable[Path]) -> tuple[Path, ...]:
@@ -18,6 +21,30 @@ def __get_data_files(ignored_files: Iterable[Path]) -> tuple[Path, ...]:
             key=lambda p: p.stem,
         )
     )
+
+
+def __print_file_options(files: tuple[Path, ...]) -> None:
+    """
+    Print the numbered file options in as many columns as fit the terminal width,
+    filling columns top-to-bottom before moving to the next column (like `ls`).
+    :param files: Files to list.
+    """
+    line_prefix: str = "  "
+    entries: list[str] = [f"{i:>{len(files)}}: {file.stem}" for i, file in enumerate(files, 1)]
+    entry_width: int = max(len(entry) for entry in entries) + _COLUMN_GAP
+    terminal_width: int = shutil.get_terminal_size(fallback=(80, 24)).columns
+    available_width: int = max(entry_width, terminal_width - len(line_prefix))
+    num_columns: int = max(1, min(len(entries), available_width // entry_width))
+    num_rows: int = -(-len(entries) // num_columns)  # Ceiling division
+
+    for row in range(num_rows):
+        line_parts: list[str] = []
+        for col in range(num_columns):
+            index = col * num_rows + row
+            if index < len(entries):
+                is_last_column = col == num_columns - 1
+                line_parts.append(entries[index] if is_last_column else entries[index].ljust(entry_width))
+        typer.echo(line_prefix + "".join(line_parts))
 
 
 def user_file_select(
@@ -47,8 +74,7 @@ def user_file_select(
         return files[0]
     # Otherwise let the user choose from the available files
     typer.echo(f"Select {file_desc} from:")
-    for i, file in enumerate(files, 1):
-        typer.echo(f"\t{i}: {file.stem}")
+    __print_file_options(files)
     while True:
         # Subtract 1 to make the index 0-based
         choice: int = typer.prompt("Insert number of your selection", type=int) - 1
