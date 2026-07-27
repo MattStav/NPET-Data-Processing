@@ -80,12 +80,12 @@ def main_menu() -> None:
     """Show a simple interactive menu."""
     while True:
         typer.secho("\n========= Main Menu =========", bold=True)
-        typer.echo("\t1. Process Single Epoch")
-        typer.echo("\t2. Process Dual Epochs")
-        typer.echo("\t3. Process PPS")
-        typer.echo("\t4. Settings")
-        typer.echo("\t5. Open Outputs")
-        typer.echo("\t0. Exit")
+        typer.echo("1. Process Single Epoch")
+        typer.echo("2. Process Dual Epochs")
+        typer.echo("3. Process PPS")
+        typer.echo("4. Settings")
+        typer.echo("5. Open Outputs")
+        typer.echo("0. Exit")
         user_choice: int = typer.prompt("Select a menu item", type=int)
         match user_choice:
             case 1:

@@ -6,10 +6,10 @@ from NPET_DP.framework.config import config
 def settings_menu() -> None:
     """Show a settings menu"""
     typer.secho("\n========= Settings Menu =========", bold=True)
-    typer.echo("\t1. Data gathering frequency")
-    typer.echo("\t2. Sigma filter")
-    typer.echo("\t3. Source dir path")
-    typer.echo("\t0. Return to main menu")
+    typer.echo("1. Data gathering frequency")
+    typer.echo("2. Sigma filter")
+    typer.echo("3. Source dir path")
+    typer.echo("0. Return to main menu")
 
     user_choice: int = typer.prompt("Select setting to adjust", type=int)
     match user_choice:
