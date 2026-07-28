@@ -28,7 +28,7 @@ jobs:
 
     - name: Install Ruff
       run: |
-        uv tool install ruff@0.15.12
+        uv tool install ruff
 
     - name: Fix import order with Ruff
       run: |
@@ -102,4 +102,4 @@ jobs:
     - name: Type check with ty
       run: |
         uv sync
-        uvx ty@0.0.33 check src
+        uvx ty check src
