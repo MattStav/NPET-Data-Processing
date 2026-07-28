@@ -12,8 +12,8 @@ from NPET_DP.processing.plotting import plot_histogram
 
 
 def drift_removal_prompt(data: NPETData) -> tuple[NPETData, int]:
-    """
-    Prompt the user for optional drift removal from data.
+    """Prompt the user for optional drift removal from data.
+
     :param data: Data to remove drift from
     :return: Data with drift removed, if applicable by the user input.
     """
@@ -36,7 +36,8 @@ def drift_removal_prompt(data: NPETData) -> tuple[NPETData, int]:
 
 
 def auto_range(delays: NPETData, signal: NDArray[np.bool_]) -> None:
-    """
+    """Auto range the x-axis based on the data.
+
     Automatically set the x-axis range of the histogram to focus on the detected signal.
     :param delays: Data to be filtered as NPETData object.
     :param signal: Boolean mask indicating the detected signal.
@@ -53,8 +54,9 @@ def auto_range(delays: NPETData, signal: NDArray[np.bool_]) -> None:
 
 
 def select_data_within_range(data: NPETData) -> NPETData:
-    """
-    Select data within a specified range, uses the values stored in config.py.
+    """Select data within a specified range.
+
+    The selection uses the values stored in config.py.
     If there is no range stored in config yet, the user is prompted to enter one.
     :param data: The data to be filtered, as NPETData object.
     :return: Filtered data, as NPETData object.
@@ -64,7 +66,8 @@ def select_data_within_range(data: NPETData) -> NPETData:
 
 
 def get_bin_count(data: NPETData, target_bin_size_fs: int = 10_000) -> int:
-    """
+    """Calculate the bin count based on the data.
+
     Calculate the number of bins for a histogram based on the data and target bin size.
     :param data: Data to calculate the bin count for.
     :param target_bin_size_fs: Target bin size in femtoseconds.
@@ -85,8 +88,9 @@ def get_bin_count(data: NPETData, target_bin_size_fs: int = 10_000) -> int:
 
 
 def histogram_plot_loop(data: NPETData, name: str) -> NPETData:
-    """
-    Loop to continuously filter and plot the histogram of the data.
+    """Loop to continuously filter and plot the histogram of the data.
+
+    Infinite loop that allows the user to filter the data using a recursive sigma filter and plot the histogram of the filtered data.
     After each iteration, the user is prompted to adjust the x-axis range.
     :param data: Data to be filtered, as NPETData object.
     :param name: Name of the file.

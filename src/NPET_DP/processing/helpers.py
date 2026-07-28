@@ -1,7 +1,8 @@
+from collections.abc import Callable
 from functools import cache, wraps
 from inspect import Signature, signature
 from pathlib import Path
-from typing import Callable, Literal, Optional, ParamSpec, TypeVar, get_args
+from typing import Literal, get_args
 
 import numpy as np
 from numpy.typing import NDArray
@@ -10,12 +11,11 @@ _UNITS_TYPE = Literal["s", "ms", "us", "ns", "ps", "fs", "as"]
 _UNITS_SCALE: tuple[_UNITS_TYPE] = get_args(_UNITS_TYPE)
 DATA_TYPE = [("seconds", np.int_), ("femto", np.int_)]
 
-_P = ParamSpec("_P")
-_R = TypeVar("_R")
 
 
-def validate_inputs(func: Callable[_P, _R]) -> Callable[_P, _R]:
-    """
+def validate_inputs[**P, R](func: Callable[P, R]) -> Callable[P, R]:
+    """Validate decorated function's arguments.
+
     Decorator that validates any argument of the decorated function whose name starts with 'data',
     regardless of whether it's passed positionally or as a keyword argument.
     """
@@ -27,7 +27,7 @@ def validate_inputs(func: Callable[_P, _R]) -> Callable[_P, _R]:
         raise TypeError(f"Expected 'data' argument for {func_name}")
 
     @wraps(func)
-    def wrapper(*args: _P.args, **kwargs: _P.kwargs) -> _R:
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
         bound = sig.bind(*args, **kwargs)
         bound.apply_defaults()
         for name in data_params:
@@ -40,12 +40,12 @@ def validate_inputs(func: Callable[_P, _R]) -> Callable[_P, _R]:
     return wrapper
 
 
-def check_data_structure(data: NDArray, arg_name: Optional[str] = None) -> None:
-    """
-    Check if the data has the correct structure
+def check_data_structure(data: NDArray, arg_name: str | None = None) -> None:
+    """Check if the data has the correct structure.
+
     :param data: Data to check.
     :param arg_name: The name of the argument being checked (for error messages)
-    :raises ValueError: If the data is not in the correct format
+    :raises ValueError: If the data is not in the correct format.
     """
     name: str = arg_name or "data"
     if not data.ndim == 1:
@@ -55,14 +55,15 @@ def check_data_structure(data: NDArray, arg_name: Optional[str] = None) -> None:
 
 
 def import_data(path: Path, seconds_add: int = 0) -> NDArray:
-    """
+    """Import data from file.
+
     Import data from the epoch output files,
     which should be in the format of: `int_sec frac_sec`.
     Basic preprocessing is applied to the data,
     including converting the fractional part to femtoseconds and handling overflow.
     :param path: Path to the epoch output file
     :param seconds_add: Number of seconds to add to each epoch, can be positive or negative
-    :return: Array of data in the format exported by this FW
+    :return: Array of data in the format exported by this FW.
     """
     assert path.is_file(), f"File {path} does not exist"
     assert path.suffix == ".out", f"File {path} is not an epoch output file"
@@ -85,14 +86,14 @@ def import_data(path: Path, seconds_add: int = 0) -> NDArray:
 
 def auto_scale_data(
     data: NDArray[np.int_ | np.floating],
-    max_scale: Optional[int] = None,
+    max_scale: int | None = None,
 ) -> tuple[NDArray[np.floating], int]:
-    """
-    Scale a single column (up or down) until the data is in nice format. Less than 1000 more than 1.
+    """Scale a single column (up or down) until the data is in nice format. Less than 1000 more than 1.
+
     :param data: Data to scale, single column
     :param max_scale: Maximum number of times to scale the data
     :return: Scaled data and the number of times the data was scaled,
-    positive scale_iter means upscaling, negative scale_iter means downscaling
+    positive scale_iter means upscaling, negative scale_iter means downscaling.
     """
     assert data.ndim == 1, "Data must be 1D"
     assert max_scale is None or max_scale >= 0, "Max scale must be positive"
@@ -114,11 +115,11 @@ def scale_data(
     data: NDArray[np.int_ | np.floating],
     scale_power: int,
 ) -> NDArray[np.float64]:
-    """
-    Scale a single column (up or down) by a given power of 1000.
+    """Scale a single column (up or down) by a given power of 1000.
+
     :param data: Data to scale, single column
     :param scale_power: Power of 1000 to scale the data by
-    :return: Scaled data
+    :return: Scaled data.
     """
     assert data.ndim == 1, "Data must be 1D"
     return (data * (1000**scale_power)).astype(np.float64)
@@ -126,15 +127,15 @@ def scale_data(
 
 @cache
 def auto_scale_num(
-    num: int | float | np.floating,
-    max_scale: Optional[int] = None,
+    num: float | np.floating,
+    max_scale: int | None = None,
 ) -> tuple[float | np.floating, int]:
-    """
-    Scale a single number (up or down) until it is in nice format. Less than 1000 more than 1.
+    """Scale a single number (up or down) until it is in nice format. Less than 1000 more than 1.
+
     :param num: Number to scale
     :param max_scale: Maximum number of times to scale the number
     :return: Scaled number and the number of times the number was scaled,
-    positive scale_iter means upscaling, negative scale_iter means downscaling
+    positive scale_iter means upscaling, negative scale_iter means downscaling.
     """
     assert isinstance(num, (int, float, np.floating)), "Number must be int or float"
     assert max_scale is None or max_scale >= 0, "Max scale must be positive"
@@ -152,25 +153,26 @@ def auto_scale_num(
     return (num * (1000**scale_iter)), scale_iter
 
 
-def scale_num(num: int | float | np.floating, scale_power: int) -> float | np.floating:
-    """
-    Scale a single number (up or down) by a given power of 1000.
+def scale_num(num: float | np.floating, scale_power: int) -> float | np.floating:
+    """Scale a single number (up or down) by a given power of 1000.
+
     :param num: Number to scale
     :param scale_power: Power of 1000 to scale the number by
-    :return: Scaled number
+    :return: Scaled number.
     """
     assert isinstance(num, (int, float, np.floating)), "Number must be int or float"
     return num * (1000**scale_power)
 
 
 def get_unit(original_unit: _UNITS_TYPE, scale_iter: int) -> _UNITS_TYPE:
-    """
+    """Get the unit based on data scaling.
+
     Get the unit resulting from scaling data by scale_iter steps of 1000 away from original_unit,
     as produced by auto_scale_data/auto_scale_num (positive scale_iter moves to a finer unit, e.g. s -> ms).
     :param original_unit: Starting unit
     :param scale_iter: Number of 1000x scale steps applied
     :return: Resulting unit
-    :raises ValueError: If the resulting unit falls outside the supported range
+    :raises ValueError: If the resulting unit falls outside the supported range.
     """
     index: int = _UNITS_SCALE.index(original_unit) + scale_iter
     if not 0 <= index < len(_UNITS_SCALE):

@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Literal, Optional
+from typing import Literal
 
 import typer
 from pydantic import BaseModel, ConfigDict, PrivateAttr
@@ -12,13 +12,13 @@ class __AppConfig(BaseModel):
     # Directory where source data is accessed
     _input_data_dir: Path = PrivateAttr(default=Path.cwd())
     # Data gathering frequency used in the processing
-    _frequency: Optional[int] = PrivateAttr(default=None)
+    _frequency: int | None = PrivateAttr(default=None)
     # Minimum delay in ns by which to filter the data
-    _min_delay: Optional[float] = PrivateAttr(default=None)
+    _min_delay: float | None = PrivateAttr(default=None)
     # Maximum delay in ns by which to filter the data
-    _max_delay: Optional[float] = PrivateAttr(default=None)
+    _max_delay: float | None = PrivateAttr(default=None)
     # Sigma value for the gaussian filter
-    _sigma: Optional[float] = PrivateAttr(default=None)
+    _sigma: float | None = PrivateAttr(default=None)
 
     @property
     def input_data_dir(self) -> Path:
@@ -27,9 +27,10 @@ class __AppConfig(BaseModel):
         return self._input_data_dir
 
     @input_data_dir.setter
-    def input_data_dir(self, new_path: Optional[Path]) -> None:
-        """
-        Validate the data directory path.
+    def input_data_dir(self, new_path: Path | None) -> None:
+        """Validate the data directory path.
+
+        Processes the new input data directory.
         When None is entered, the user is prompted in CLI to enter a new path.
         :param new_path: Path to a new data directory.
         :return: New data directory path.
@@ -68,7 +69,7 @@ class __AppConfig(BaseModel):
         self._frequency = new_frequency
 
     def prompt_frequency(self) -> None:
-        """Prompt the user to enter a frequency value, which is saved to config"""
+        """Prompt the user to enter a frequency value, which is saved to config."""
         typer.echo(f"Current data gathering frequency: {self._frequency} Hz")
         while True:
             try:
@@ -94,7 +95,7 @@ class __AppConfig(BaseModel):
         self._sigma = new_sigma
 
     def prompt_sigma(self) -> None:
-        """Prompt the user to enter a sigma value, which is saved to config"""
+        """Prompt the user to enter a sigma value, which is saved to config."""
         typer.echo(f"Current sigma filtering: {self._sigma}")
         while True:
             try:
@@ -138,8 +139,8 @@ class __AppConfig(BaseModel):
         delay_type: Literal["min", "max"],
         validate: bool = True,
     ) -> None:
-        """
-        Prompt the user to enter a delay value.
+        """Prompt the user to enter a delay value.
+
         :param delay_type: The type of delay to prompt for.
         :param validate: Whether to validate the delay value.
         If enabled, the max delay must be greater than the min delay.

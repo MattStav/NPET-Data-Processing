@@ -40,9 +40,11 @@ class NPETData(BaseModel):
         return self
 
     def __repr__(self) -> str:
+        """Return a repr showing the number of data rows."""
         return f"NPETData(len={len(self.structured_arr)})"
 
     def __len__(self) -> int:
+        """Get the length of the NPETData object."""
         sec_len: int = len(self.seconds)
         femto_len: int = len(self.femto)
         assert sec_len == femto_len, f"Invalid data len: {sec_len} != {femto_len}"
@@ -87,21 +89,21 @@ class NPETData(BaseModel):
 
     @classmethod
     def from_path(cls, data_path: Path, seconds_add: int = 0) -> "NPETData":
-        """
-        Import NPET data from a file.
+        """Import NPET data from a file.
+
         :param data_path: Path to the data file
         :param seconds_add: Number of seconds to add to each epoch, can be positive or negative
-        :return: NPETData object
+        :return: NPETData object.
         """
         data: NDArray = import_data(data_path, seconds_add)
         return cls.from_structured_arr(data)
 
     @classmethod
     def from_structured_arr(cls, structured_arr: NDArray) -> "NPETData":
-        """
-        Init NPETData from a structured array.
+        """Init NPETData from a structured array.
+
         :param structured_arr: Structured array holding the measured seconds and femtoseconds delay values in two columns.
-        :return: NPETData object
+        :return: NPETData object.
         """
         check_data_structure(structured_arr)
         return cls(seconds=structured_arr["seconds"], femto=structured_arr["femto"])
@@ -117,8 +119,8 @@ class NPETData(BaseModel):
         self,
         data_ref: "NPETData",
     ) -> tuple["NPETData", int]:
-        """
-        Discard rows from the data until the first row of the first column matches the reference data.
+        """Discard rows from the data until the first row of the first column matches the reference data.
+
         :param data_ref: Reference data, the first row of the first column is used to match.
         """
         ret, discarded = discard_rows_until_first_col_match(
@@ -128,11 +130,11 @@ class NPETData(BaseModel):
         return NPETData.from_structured_arr(ret), discarded
 
     def calc_delay_start(self, *, stop: "NPETData", frequency: int) -> "NPETData":
-        """
-        Calculate the delay between this data (start) and the given stop data.
+        """Calculate the delay between this data (start) and the given stop data.
+
         :param stop: Stop data to calculate the delay against
         :param frequency: Frequency of the data
-        :return: NPETData of the calculated delays
+        :return: NPETData of the calculated delays.
         """
         ret = calculate_delay(
             data_start=self.structured_arr,
@@ -142,11 +144,11 @@ class NPETData(BaseModel):
         return NPETData.from_structured_arr(ret)
 
     def calc_delay_stop(self, *, start: "NPETData", frequency: int) -> "NPETData":
-        """
-        Calculate the delay between the given start data and this data (stop).
+        """Calculate the delay between the given start data and this data (stop).
+
         :param start: Start data to calculate the delay against
         :param frequency: Frequency of the data
-        :return: NPETData of the calculated delays
+        :return: NPETData of the calculated delays.
         """
         ret = calculate_delay(
             data_start=start.structured_arr,
@@ -160,8 +162,9 @@ class NPETData(BaseModel):
         bin_size: int = 40_000,  # fs
         percentage_threshold: float = 0.15,
     ) -> tuple[NDArray[np.bool_], ...]:
-        """
-        Detect signals in the delay data. Delays where data counts are above the threshold are considered signals.
+        """Detect signals in the delay data.
+
+        Delays where data counts are above the threshold are considered signals.
         :param bin_size: The size of the bins in femtoseconds into which the data will be split.
         :param percentage_threshold: The percentage of data that must be in a bin to be considered a signal.
         :return: Boolean masks indicating detected signals.
@@ -176,10 +179,10 @@ class NPETData(BaseModel):
         self,
         signal_mask: NDArray[np.bool_],
     ) -> tuple[float, float]:
-        """
-        Calculate a range of data around the detected signal.
+        """Calculate a range of data around the detected signal.
+
         :param signal_mask: Boolean mask indicating the detected signal
-        :return: A tuple defining the range min and max values
+        :return: A tuple defining the range min and max values.
         """
         signal_values: NDArray[np.int_] = self.femto[signal_mask]
         range_center: float = (signal_values.max() + signal_values.min()) / 2
@@ -190,10 +193,10 @@ class NPETData(BaseModel):
         )
 
     def filter_range(self, filter_mask: NDArray[np.bool_]) -> "NPETData":
-        """
-        Filter the data based on the given mask.
+        """Filter the data based on the given mask.
+
         :param filter_mask: Boolean mask indicating which data points to keep
-        :return: NPETData object with filtered data
+        :return: NPETData object with filtered data.
         """
         filtered_seconds = self.seconds[filter_mask]
         filtered_femto = self.femto[filter_mask]
@@ -204,11 +207,11 @@ class NPETData(BaseModel):
         sigma_mult: float,
         max_iter: int = 100,
     ) -> tuple["NPETData", int]:
-        """
-        Perform recursive sigma filtering on the data.
+        """Perform recursive sigma filtering on the data.
+
         :param sigma_mult: The sigma multiplier for the filtering
         :param max_iter: The maximum number of iterations
-        :return: NPETData object with filtered data and the number of iterations
+        :return: NPETData object with filtered data and the number of iterations.
         """
         res, sig_iter = recursive_sigma_filter(
             self.structured_arr,
@@ -227,7 +230,8 @@ class NPETData(BaseModel):
         return is_continuous(self.seconds, expected_diff=expected_diff)
 
     def compensate_drift(self, pol_deg: int = 1) -> "NPETData":
-        """
+        """Remove drift.
+
         Remove drift from the data using polynomial regression.
         :param pol_deg: Degree of the polynomial used for drift removal.
         :return: NPETData object with drift removed.
@@ -236,7 +240,8 @@ class NPETData(BaseModel):
         return NPETData.from_structured_arr(no_drift)
 
     def femto_not_in(self, other: "NPETData") -> "NPETData":
-        """
+        """Get the rows of this NPETData object that are not present in the other NPETData.
+
         Return a new NPETData object containing only the rows that are not present in the other NPETData object.
         :param other: The other NPETData object to compare against.
         :return: NPETData object with rows not present in the other object.
@@ -247,7 +252,8 @@ class NPETData(BaseModel):
         return NPETData(seconds=filtered_seconds, femto=filtered_femto)
 
     def modulo(self, mod_value: int) -> "NPETData":
-        """
+        """Get data modulo.
+
         Return a new NPETData object with the femto values modulo the given value.
         :param mod_value: The value to modulo the femto values by.
         :return: NPETData object with femto values modulo the given value.

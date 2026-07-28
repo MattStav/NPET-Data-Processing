@@ -22,12 +22,16 @@ from NPET_DP.workflows.helpers import (
     histogram_plot_loop,
 )
 
-_Data = NamedTuple("_Data", [("data_start", NPETData), ("data_stop", NPETData)])
+
+class _Data(NamedTuple):
+    data_start: NPETData
+    data_stop: NPETData
 
 
 def __match_data(*, data_start: NPETData, data_stop: NPETData) -> _Data:
-    """
-    Discard data that was taken before the second (either start or stop) source begun measurement,
+    """Discard non-matching data.
+
+    Discards data that was taken before the second (either start or stop) source begun measurement,
     until the data begins at the same second.
     :param data_start: Data from the start source, as NPETData object.
     :param data_stop: Data from the stop source, as NPETData object.
@@ -49,11 +53,12 @@ def __match_data(*, data_start: NPETData, data_stop: NPETData) -> _Data:
 
 
 def __plot_all_scatter(data: NPETData, signal: tuple[NDArray[np.bool_], ...]) -> None:
-    """
-    Plot all delay data on y-axis in the order of events.
+    """Plot all delays in scatter graph.
+
+    Delay data is on y-axis in the order of events.
     Uses interactive high-performance bokeh graphs.
     :param data: Data to be plotted as NPETData object.
-    :param signal: List of boolean masks indicating detected signals
+    :param signal: List of boolean masks indicating detected signals.
     """
     typer.echo("\nPlotting all the calculated delay data in interactive mode")
     output_file(get_plot_path("bokeh_plot", suffix="html"), mode="inline")

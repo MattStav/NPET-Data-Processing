@@ -9,8 +9,8 @@ from NPET_DP.framework.constants import APPDATA_DIR_NAME
 
 
 def __is_dev_env() -> bool:
-    """
-    Check if the app is running in a development environment.
+    """Check if the app is running in a development environment.
+
     :return: True if the app is running in a development environment, False otherwise.
     """
     return __app_file_path().parent.parent.name == "src"
@@ -23,8 +23,8 @@ def __app_file_path() -> Path:
 
 
 def get_path(append: str = "") -> Path:
-    """
-    Get a path to the directory where data is stored.
+    """Get a path to the directory where data is stored.
+
     :param append: Path to append to the base path.
     """
     base_path: Path = (
@@ -37,8 +37,8 @@ def get_path(append: str = "") -> Path:
 
 
 def get_plot_path(file_name: str = "", *, suffix: str = ".png") -> Path:
-    """
-    Get a path to the directory where plots are stored.
+    """Get a path to the directory where plots are stored.
+
     :param file_name: Name of the plot file.
     :param suffix: Suffix of the plot file. It is appended to the file name if not already present.
     :return: Path to the plot file.
@@ -58,7 +58,7 @@ def open_plot_outputs() -> None:
     """Open the directory where plots are stored."""
     outputs_dir: Path = get_plot_path()
     if sys.platform == "win32":
-        os.startfile(outputs_dir)
+        os.startfile(outputs_dir)  # noqa: S606
     else:
         typer.secho("Not supported on this platform", fg=typer.colors.RED)
         typer.echo(f"Please open the outputs manually here: {outputs_dir}")

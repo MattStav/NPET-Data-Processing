@@ -18,11 +18,11 @@ from NPET_DP.processing.helpers import (
 
 
 def plot_time_deviation(data: NPETData, frequency: int, name: str) -> None:
-    """
-    Calculate and plot the time deviation of the data.
+    """Calculate and plot the time deviation of the data.
+
     :param data: Data to be plotted, as NPETData object.
     :param frequency: Frequency of the data
-    :param name: Name of the file
+    :param name: Name of the file.
     """
     assert frequency > 0, f"Frequency must be positive: {frequency}"
     assert name, "Name must not be empty"
@@ -58,7 +58,7 @@ def plot_time_deviation(data: NPETData, frequency: int, name: str) -> None:
         ticker.FuncFormatter(
             lambda x, p: (
                 (f"{x:.1f}" if x % 1 else f"{int(x)}")
-                if int(round(x / 10 ** np.floor(np.log10(x)))) % 2 == 0
+                if round(x / 10 ** np.floor(np.log10(x))) % 2 == 0
                 else ""
             )
         )
@@ -82,8 +82,8 @@ def plot_histogram(
     name: str,
     bin_count: int,
 ) -> None:
-    """
-    Plot a histogram of the measured data.
+    """Plot a histogram of the measured data.
+
     :param all_data: All measured data as a NPETData object.
     :param signal_data: Signal data as an NPETData object.
     :param name: Name of the plot.

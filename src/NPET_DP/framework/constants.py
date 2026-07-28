@@ -1,4 +1,4 @@
-"""Application constants"""
+"""Application constants."""
 
 APP_NAME: str = "NPET_Data_Processing"
 PACKAGE_NAME: str = "NPET_DP"

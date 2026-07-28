@@ -12,8 +12,8 @@ from NPET_DP.processing.helpers import (
 
 @validate_inputs
 def process_overflow(data: NDArray) -> NDArray:
-    """
-    Processes the data overflowing into the previous second.
+    """Process the data overflowing into the previous second.
+
     Data where the overflow happened is adjusted to match the next second.
     :param data: Data to be processed, in the FW standard format.
     :return: Processed data, in the FW standard format.
@@ -48,8 +48,8 @@ def process_overflow(data: NDArray) -> NDArray:
 
 
 def is_continuous(data: NDArray[np.int_], expected_diff: int = 1) -> bool:
-    """
-    Check whether one column data is continuous, i.e., all values are consecutive.
+    """Check whether one column data is continuous, i.e., all values are consecutive.
+
     :param data: Data to check, in one column.
     :param expected_diff: Expected difference between consecutive values.
     :return: True if the data is continuous, False otherwise.
@@ -64,8 +64,8 @@ def discard_rows_until_first_col_match(
     data_ref: NDArray,
     data_to_process: NDArray,
 ) -> tuple[NDArray, int]:
-    """
-    Discard rows until the first column of the data matches the first column of the reference data.
+    """Discard rows until the first column of the data matches the first column of the reference data.
+
     :param data_ref: Reference data.
     :param data_to_process: Data starting too early, where the early part will be discarded.
     :return: Matching portion of the data and the number of discarded rows.
@@ -84,8 +84,8 @@ def calculate_delay(
     data_stop: NDArray,
     frequency: int,
 ) -> NDArray:
-    """
-    Calculate the delay between two sets of EPOCH measurement data.
+    """Calculate the delay between two sets of EPOCH measurement data.
+
     For each epoch in the first dataset, find the corresponding epoch in the second dataset,
     within the allowed delay range defined by the frequency.
     The delay is calculated as the difference in femtoseconds between the two epochs, taking into account potential overflows.
@@ -149,8 +149,8 @@ def detect_signal(
     bin_size: int = 40_000,  # 0.04 ns
     percentage_threshold: float = 0.15,
 ) -> tuple[NDArray[np.bool_], ...]:
-    """
-    Detect signals in the delay data by identifying horizontal lines (clusters of similar delay values).
+    """Detect signals in the delay data by identifying horizontal lines (clusters of similar delay values).
+
     :param data_delay: Data to be processed, the femtoseconds delay column from the data.
     :param bin_size: The size of the bins in femtoseconds into which the data will be split (keyword-only).
     :param percentage_threshold: The percentage of data that must be in a bin to be considered a signal (keyword-only).
@@ -195,8 +195,8 @@ def recursive_sigma_filter(
     sigma_mult: float,
     max_iter: int = 100,
 ) -> tuple[NDArray, int]:
-    """
-    Recursively filter out values outside the ±n_sigma range of gaussian fit until convergence.
+    """Recursively filter out values outside the ±n_sigma range of gaussian fit until convergence.
+
     :param data: Data to process, in the FW standard format.
     :param sigma_mult: Standard deviation multiplier that defines the range of values to keep (keyword-only).
     :param max_iter: Maximum number of iterations to prevent infinite loops (keyword-only).
@@ -225,7 +225,8 @@ def recursive_sigma_filter(
 
 @validate_inputs
 def remove_drift(data: NDArray, deg: int = 1) -> NDArray:
-    """
+    """Remove drift from data.
+
     Remove a polynomial drift/trend from a time series by least-squares fitting a
     polynomial to the data and subtracting it, leaving only the residuals.
     :param data: Data to be processed, in the FW standard format.

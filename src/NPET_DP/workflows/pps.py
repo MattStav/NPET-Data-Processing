@@ -13,8 +13,8 @@ from NPET_DP.workflows.helpers import drift_removal_prompt
 
 
 def __plot_short(data: NPETData, name: str) -> None:
-    """
-    Show the data using a scatter plot.
+    """Plot a small amount of PPS data in a scatter plot.
+
     :param data: Data to be plotted, as NPETData object.
     :param name: Name of the file.
     """
@@ -37,8 +37,8 @@ def __plot_short(data: NPETData, name: str) -> None:
 
 
 def __plot_long(data: NPETData, name: str) -> None:
-    """
-    Plot a large amount of PPS data in a scatter plot.
+    """Plot a large amount of PPS data in a scatter plot.
+
     :param data: Data to be plotted, as NPETData object.
     :param name: Name of the file.
     """
@@ -80,8 +80,9 @@ def __plot_long(data: NPETData, name: str) -> None:
 
 
 def __plot(data: NPETData, name: str) -> None:
-    """
-    Plot the PPS data, using a different plotting method depending on the size of the data.
+    """Plot the PPS data.
+
+    Uses different plotting method depending on the size of the data.
     :param data: Data to be plotted as NPETData object.
     :param name: Name of the file.
     """

@@ -1,7 +1,7 @@
 import sys
 from importlib.metadata import version
 from pathlib import Path
-from typing import Annotated, Optional
+from typing import Annotated
 
 import typer
 
@@ -26,8 +26,8 @@ npet_dp = typer.Typer(
 
 
 def _version_callback(callback_enabled: bool) -> None:
-    """
-    Print the version of the package, when enabled.
+    """Print the version of the package, when enabled.
+
     :param callback_enabled: Whether the callback is enabled.
     """
     if not callback_enabled:
@@ -45,8 +45,8 @@ def arg_parse(
         "-dp",
         help="Path to directory with the NPET data to process",
     ),
-    ver: Annotated[  # noqa: F841
-        Optional[bool],
+    ver: Annotated[
+        bool | None,
         typer.Option(
             "--version",
             "-v",
@@ -56,10 +56,7 @@ def arg_parse(
         ),
     ] = None,
 ) -> None:
-    """
-    Parse and process command line arguments.
-    Launch the app.
-    """
+    """Parse top-level CLI options and launch the interactive menu if no subcommand given."""
     typer.secho(
         f"{APP_NAME} launched: v{version(PACKAGE_NAME)}",
         fg=typer.colors.GREEN,

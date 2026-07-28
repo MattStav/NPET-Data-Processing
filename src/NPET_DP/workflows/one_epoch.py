@@ -14,12 +14,12 @@ from NPET_DP.workflows.helpers import auto_range, histogram_plot_loop
 
 
 def __plot_singular_data(data: NPETData, name: str) -> None:
-    """
-    Plot a time epoch of each measurement within a set bin of width 1/freq
-    Showing the delay within each measurement time window.
-    WARNING: The yaxis values are nonsense
+    """Plot a time epoch of each measurement.
+
+    The plot show data within a set bin of width 1/freq,
+    showing the delay within each measurement time window.
     :param data: Data to be plotted, as NPETData object.
-    :param name: Name of the file
+    :param name: Name of the file.
     """
     typer.echo(f"Plotting measured data from {name}")
     sc_femto, unit = data.sc_femto

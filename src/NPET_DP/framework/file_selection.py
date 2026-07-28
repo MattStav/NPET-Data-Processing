@@ -1,8 +1,8 @@
 import re
 import shutil
-from datetime import datetime
+from collections.abc import Iterable
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Iterable
 
 import typer
 
@@ -14,8 +14,8 @@ _DATETIME_PATTERN: re.Pattern[str] = re.compile(r"\d{8}_\d{6}")
 
 
 def __get_data_files(ignored_files: Iterable[Path]) -> tuple[Path, ...]:
-    """
-    Get all the data files in the data directory.
+    """Get all the data files in the data directory.
+
     :param ignored_files: Files to ignore.
     :return: Tuple of data files.
     """
@@ -29,7 +29,8 @@ def __get_data_files(ignored_files: Iterable[Path]) -> tuple[Path, ...]:
 
 
 def __format_stem(stem: str) -> str:
-    """
+    """Format datetime in the filename.
+
     Replace any `YYYYMMDD_HHMMSS` timestamp in the stem with `dd.mm.yyyy hh:mm:ss`,
     then turn remaining underscores into spaces.
     :param stem: File stem to format.
@@ -37,16 +38,18 @@ def __format_stem(stem: str) -> str:
     """
 
     def format_match(match: re.Match[str]) -> str:
-        return datetime.strptime(match.group(), "%Y%m%d_%H%M%S").strftime(
-            "%d.%m.%Y %H:%M:%S"
+        return (
+            datetime.strptime(match.group(), "%Y%m%d_%H%M%S")
+            .replace(tzinfo=UTC)
+            .strftime("%d.%m.%Y %H:%M:%S")
         )
 
     return _DATETIME_PATTERN.sub(format_match, stem).replace("_", " ")
 
 
 def __build_entries(files: tuple[Path, ...]) -> tuple[list[str], int, int]:
-    """
-    Build the numbered entry labels and figure out how many columns fit the terminal width.
+    """Build the numbered entry labels and figure out how many columns fit the terminal width.
+
     :param files: Files to list.
     :return: Tuple of (entries, entry width including a gap, number of columns).
     """
@@ -67,8 +70,9 @@ def __print_file_options_page(
     num_columns: int,
     page: int,
 ) -> None:
-    """
-    Print one page (at most `_ROWS_PER_PAGE` rows) of the numbered file options,
+    """Print one page of file selection.
+
+    The printed page (at most `_ROWS_PER_PAGE` rows) has the numbered file options,
     filling columns top-to-bottom before moving to the next column (like `ls`).
     :param entries: All numbered entry labels.
     :param entry_width: Column width including a gap.
@@ -96,8 +100,8 @@ def user_file_select(
     file_description: str = "file",
     ignored_files: Iterable[Path] = (),
 ) -> Path:
-    """
-    Prompt the user to choose a file from the directory of data sources.
+    """Prompt the user to choose a file from the directory of data sources.
+
     :param file_description: Description of the file that will be used in the prompt.
     :param ignored_files: Files to ignore.
     :return: Path of the chosen file.
