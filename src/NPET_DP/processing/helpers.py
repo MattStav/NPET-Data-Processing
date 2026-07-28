@@ -12,7 +12,6 @@ _UNITS_SCALE: tuple[_UNITS_TYPE] = get_args(_UNITS_TYPE)
 DATA_TYPE = [("seconds", np.int_), ("femto", np.int_)]
 
 
-
 def validate_inputs[**P, R](func: Callable[P, R]) -> Callable[P, R]:
     """Validate decorated function's arguments.
 
