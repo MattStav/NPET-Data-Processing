@@ -46,6 +46,17 @@ version-file = "src/NPET_DP/_version.py"
 [tool.hatch.version.raw-options]
 version_scheme = "post-release"
 
+[tool.ruff.lint.pydocstyle]
+convention = "pep257"
+
+[tool.ruff.lint]
+extend-select = ["I", "ANN", "D", "S", "N", "C4", "PTH"]
+# E501: line too long. Catches comments too, which is pain in the ass.
+# S101: disallow use of assert statements. Asserts are used for type checking.
+# N999: disallow certain names. The package name is in all caps, which is not PEP8 compliant, but it is a proper name of the package.
+# D100: each public module must have a docstring. Documenting everything is tedious.
+ignore = ["E501", "S101", "N999", "D100"]
+
 [dependency-groups]
 dev = [
     "pytest>=9.0.3",
