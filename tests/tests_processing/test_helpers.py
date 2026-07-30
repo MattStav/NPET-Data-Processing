@@ -30,7 +30,7 @@ from NPET_DP.processing.helpers import (
         pytest.param((500, 0), id="pass"),
         pytest.param((33_000_000_000_000_000, -5), id="large_downscale"),
         pytest.param((0.05, 1), id="once_upscale"),
-        pytest.param((5E-15, 5), id="large_upscale"),
+        pytest.param((5e-15, 5), id="large_upscale"),
     ],
 )
 def test_num(request: FixtureRequest) -> tuple[float, int]:
