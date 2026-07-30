@@ -1,5 +1,5 @@
 from collections.abc import Callable
-from functools import cache, wraps
+from functools import wraps
 from inspect import Signature, signature
 from pathlib import Path
 from typing import Literal, get_args
@@ -124,11 +124,10 @@ def scale_data(
     return (data * (1000**scale_power)).astype(np.float64)
 
 
-@cache
-def auto_scale_num(
-    num: float | np.floating,
+def auto_scale_num[NUM_T: (float, np.floating)](
+    num: NUM_T,
     max_scale: int | None = None,
-) -> tuple[float | np.floating, int]:
+) -> tuple[NUM_T, int]:
     """Scale a single number (up or down) until it is in nice format. Less than 1000 more than 1.
 
     :param num: Number to scale
@@ -152,7 +151,7 @@ def auto_scale_num(
     return (num * (1000**scale_iter)), scale_iter
 
 
-def scale_num(num: float | np.floating, scale_power: int) -> float | np.floating:
+def scale_num[NUM_T: (float, np.floating)](num: NUM_T, scale_power: int) -> NUM_T:
     """Scale a single number (up or down) by a given power of 1000.
 
     :param num: Number to scale
