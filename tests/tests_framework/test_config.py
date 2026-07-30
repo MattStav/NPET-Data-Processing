@@ -141,6 +141,33 @@ def test_app_config_prompt_frequency(mock_prompt: MagicMock) -> None:
 
 
 @patch("typer.prompt")
+def test_app_config_prompt_frequency_invalid_retry(mock_prompt: MagicMock) -> None:
+    """Test frequency invalid prompt inputs.
+
+    Test that invalid frequency values (non-positive) reprompt
+    until a valid value is provided.
+    """
+    config = __AppConfig()
+    mock_prompt.side_effect = [-5, 0, 50]
+    config.prompt_frequency()
+    assert config.frequency == 50
+    assert mock_prompt.call_count == 3
+
+
+@patch("typer.prompt")
+def test_app_config_frequency_getter_prompts_when_unset(mock_prompt: MagicMock) -> None:
+    """Test frequency getter with no value defined yet.
+
+    Accessing the frequency before it has ever been set should prompt for it
+    and persist the result, instead of raising or returning an empty value.
+    """
+    config = __AppConfig()
+    mock_prompt.return_value = 75
+    assert config.frequency == 75
+    mock_prompt.assert_called_once()
+
+
+@patch("typer.prompt")
 def test_app_config_prompt_sigma(mock_prompt: MagicMock) -> None:
     """Test sigma prompt.
 
@@ -150,6 +177,59 @@ def test_app_config_prompt_sigma(mock_prompt: MagicMock) -> None:
     mock_prompt.return_value = 1.5
     config.prompt_sigma()
     assert config.sigma == 1.5
+
+
+@patch("typer.prompt")
+def test_app_config_prompt_sigma_invalid_retry(mock_prompt: MagicMock) -> None:
+    """Test sigma invalid prompt inputs.
+
+    Test that invalid sigma values (non-positive) reprompt
+    until a valid value is provided.
+    """
+    config = __AppConfig()
+    mock_prompt.side_effect = [0.0, -1.1, 1.5]
+    config.prompt_sigma()
+    assert config.sigma == 1.5
+    assert mock_prompt.call_count == 3
+
+
+@patch("typer.prompt")
+def test_app_config_sigma_getter_prompts_when_unset(mock_prompt: MagicMock) -> None:
+    """Test sigma getter with no value defined yet.
+
+    Accessing sigma before it has ever been set should prompt for it
+    and persist the result, instead of raising or returning an empty value.
+    """
+    config = __AppConfig()
+    mock_prompt.return_value = 3.3
+    assert config.sigma == 3.3
+    mock_prompt.assert_called_once()
+
+
+@patch("typer.prompt")
+def test_app_config_min_delay_getter_prompts_when_unset(mock_prompt: MagicMock) -> None:
+    """Test min_delay getter with no value defined yet.
+
+    Accessing min_delay before it has ever been set should prompt for it
+    and persist the result (converted from ns to fs).
+    """
+    config = __AppConfig()
+    mock_prompt.return_value = 0.5
+    assert config.min_delay == 0.5 * 1e6
+    mock_prompt.assert_called_once()
+
+
+@patch("typer.prompt")
+def test_app_config_max_delay_getter_prompts_when_unset(mock_prompt: MagicMock) -> None:
+    """Test max_delay getter with no value defined yet.
+
+    Accessing max_delay before it has ever been set should prompt for it
+    and persist the result (converted from ns to fs).
+    """
+    config = __AppConfig()
+    mock_prompt.return_value = 2.0
+    assert config.max_delay == 2.0 * 1e6
+    mock_prompt.assert_called_once()
 
 
 @pytest.mark.parametrize(
