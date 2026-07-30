@@ -7,7 +7,7 @@ import pytest
 from pytest import CaptureFixture, MonkeyPatch
 
 from NPET_DP.framework.config import config
-from NPET_DP.framework.file_selection import user_file_select
+from NPET_DP.framework.file_selection import _ROWS_PER_PAGE, user_file_select
 
 
 @pytest.fixture()
@@ -24,6 +24,35 @@ def _test_files(tmp_path: Path) -> tuple[Path, Path]:
     os.utime(older, (now - 60, now - 60))
     os.utime(newer, (now, now))
     return newer, older
+
+
+@pytest.fixture()
+def _force_single_column(monkeypatch: MonkeyPatch) -> None:
+    """Force the file-selection layout to a single column.
+
+    This makes `page_size` (`num_columns * _ROWS_PER_PAGE`) deterministic and
+    equal to `_ROWS_PER_PAGE`, regardless of the terminal width the tests run in.
+    """
+    monkeypatch.setattr(
+        "NPET_DP.framework.file_selection.shutil.get_terminal_size",
+        lambda fallback=(80, 24): os.terminal_size((1, 24)),
+    )
+
+
+@pytest.fixture()
+def _paginated_files(tmp_path: Path) -> tuple[Path, ...]:
+    """Create one more file than fits on a single page (with a single column forced).
+
+    Returned newest-first, matching the sort order used by user_file_select.
+    """
+    now: float = time.time()
+    paths: list[Path] = []
+    for i in range(_ROWS_PER_PAGE + 2):
+        f = tmp_path / f"file{i}.out"
+        f.write_text("dummy", encoding="utf-8")
+        os.utime(f, (now + i, now + i))
+        paths.append(f)
+    return tuple(reversed(paths))
 
 
 def test_user_file_select_raises(tmp_path: Path, monkeypatch: MonkeyPatch) -> None:
@@ -137,3 +166,119 @@ def test_user_file_select_formats_embedded_timestamp(
     assert "01.01.2026 08:00:00" in output
     assert "20260723_134917" not in output
     assert "20260101_080000" not in output
+
+
+@pytest.mark.parametrize(
+    ("num_files", "expect_hint"),
+    [(_ROWS_PER_PAGE, False), (_ROWS_PER_PAGE + 1, True)],
+)
+def test_user_file_select_pagination_hint_boundary(
+    tmp_path: Path,
+    monkeypatch: MonkeyPatch,
+    _force_single_column: None,
+    num_files: int,
+    expect_hint: bool,
+) -> None:
+    """Test that the pagination hint only appears once files overflow a single page.
+
+    With a single column forced, `page_size` equals `_ROWS_PER_PAGE`, so exactly
+    `_ROWS_PER_PAGE` files should still fit on one page (no hint), while one more
+    file should require a second page (hint shown).
+    """
+    monkeypatch.setattr(config, "input_data_dir", tmp_path)
+    now: float = time.time()
+    for i in range(num_files):
+        f = tmp_path / f"file{i}.out"
+        f.write_text("dummy", encoding="utf-8")
+        os.utime(f, (now + i, now + i))
+    with patch("typer.prompt", return_value=1) as mock_prompt:
+        user_file_select()
+    prompt_text: str = mock_prompt.call_args_list[0].args[0]
+    assert ("next page" in prompt_text) == expect_hint
+    assert ("previous page" in prompt_text) == expect_hint
+
+
+def test_user_file_select_previous_page_navigates_back(
+    tmp_path: Path,
+    monkeypatch: MonkeyPatch,
+    _paginated_files: tuple[Path, ...],
+    _force_single_column: None,
+) -> None:
+    """Test that choosing -1 after -2 returns to the first page.
+
+    Selecting index 1 after paging forward and back should resolve to the
+    newest file, proving -1 actually paged backward.
+    """
+    monkeypatch.setattr(config, "input_data_dir", tmp_path)
+    with patch("typer.prompt", side_effect=[-2, -1, 1]):
+        result: Path = user_file_select()
+    assert result == _paginated_files[0]
+
+
+def test_user_file_select_next_page_clamps_at_last_page(
+    tmp_path: Path,
+    monkeypatch: MonkeyPatch,
+    _paginated_files: tuple[Path, ...],
+    _force_single_column: None,
+) -> None:
+    """Test that -2 beyond the last page keeps the current page instead of erroring.
+
+    Repeated -2 choices past the final page should not raise or skip past valid
+    entries; the last entry should still be selectable afterward.
+    """
+    monkeypatch.setattr(config, "input_data_dir", tmp_path)
+    last_index: int = len(_paginated_files)
+    with patch("typer.prompt", side_effect=[-2, -2, last_index]):
+        result: Path = user_file_select()
+    assert result == _paginated_files[last_index - 1]
+
+
+def test_user_file_select_previous_page_clamps_at_first_page(
+    tmp_path: Path,
+    monkeypatch: MonkeyPatch,
+    _paginated_files: tuple[Path, ...],
+    _force_single_column: None,
+) -> None:
+    """Test that -1 on the first page keeps the current page instead of erroring.
+
+    Choosing -1 while already on the first page should not raise or move to a
+    negative page; the newest entry should still be selectable afterward.
+    """
+    monkeypatch.setattr(config, "input_data_dir", tmp_path)
+    with patch("typer.prompt", side_effect=[-1, 1]):
+        result: Path = user_file_select()
+    assert result == _paginated_files[0]
+
+
+def test_user_file_select_page_shows_only_current_page_entries(
+    tmp_path: Path,
+    monkeypatch: MonkeyPatch,
+    _paginated_files: tuple[Path, ...],
+    _force_single_column: None,
+    capsys: CaptureFixture,
+) -> None:
+    """Test that each page only prints its own slice of entries.
+
+    Entries belonging to the other page should not be visible on screen at the
+    same time as the currently displayed page.
+    """
+    monkeypatch.setattr(config, "input_data_dir", tmp_path)
+    choices: list[int] = [-2, len(_paginated_files)]
+
+    def fake_prompt(*_args: object, **_kwargs: object) -> int:
+        output: str = capsys.readouterr().out
+        if len(choices) == 2:
+            for i in range(1, _ROWS_PER_PAGE + 1):
+                assert f"{i}: " in output
+            assert f"{_ROWS_PER_PAGE + 1}: " not in output
+            assert f"{_ROWS_PER_PAGE + 2}: " not in output
+        else:  # second call, second page just printed
+            assert f"{_ROWS_PER_PAGE + 1}: " in output
+            assert f"{_ROWS_PER_PAGE + 2}: " in output
+            for i in range(1, _ROWS_PER_PAGE + 1):
+                assert f"{i}: " not in output
+        return choices.pop(0)
+
+    with patch("typer.prompt", side_effect=fake_prompt):
+        result: Path = user_file_select()
+    assert result == _paginated_files[-1]
