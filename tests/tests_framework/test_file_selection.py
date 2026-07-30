@@ -146,6 +146,79 @@ def test_user_file_select_ignore_files(
     assert result == _test_files[1]
 
 
+def test_user_file_select_manual_path_absolute(
+    tmp_path: Path,
+    monkeypatch: MonkeyPatch,
+    _test_files: tuple[Path, Path],
+) -> None:
+    """Test manual path entry with an absolute path.
+
+    Choosing 0 should prompt for a file path and, when given an absolute
+    path to an existing file, return it directly.
+    """
+    monkeypatch.setattr(config, "input_data_dir", tmp_path)
+    other_dir: Path = tmp_path / "elsewhere"
+    other_dir.mkdir()
+    target: Path = other_dir / "manual.out"
+    target.write_text("dummy", encoding="utf-8")
+    with patch("typer.prompt", side_effect=[0, str(target)]):
+        result: Path = user_file_select()
+    assert result == target
+
+
+def test_user_file_select_manual_path_relative_to_data_dir(
+    tmp_path: Path,
+    monkeypatch: MonkeyPatch,
+    _test_files: tuple[Path, Path],
+) -> None:
+    """Test manual path entry with a relative path.
+
+    A relative path should be resolved against the configured data directory.
+    """
+    monkeypatch.setattr(config, "input_data_dir", tmp_path)
+    target: Path = tmp_path / "manual.out"
+    target.write_text("dummy", encoding="utf-8")
+    with patch("typer.prompt", side_effect=[0, "manual.out"]):
+        result: Path = user_file_select()
+    assert result == target
+
+
+def test_user_file_select_manual_path_without_suffix_appends_out(
+    tmp_path: Path,
+    monkeypatch: MonkeyPatch,
+    _test_files: tuple[Path, Path],
+) -> None:
+    """Test manual path entry without a suffix.
+
+    When the entered path has no suffix, `.out` should be appended before
+    looking up the file.
+    """
+    monkeypatch.setattr(config, "input_data_dir", tmp_path)
+    target: Path = tmp_path / "manual.out"
+    target.write_text("dummy", encoding="utf-8")
+    with patch("typer.prompt", side_effect=[0, "manual"]):
+        result: Path = user_file_select()
+    assert result == target
+
+
+def test_user_file_select_manual_path_not_found_reprompts(
+    tmp_path: Path,
+    monkeypatch: MonkeyPatch,
+    _test_files: tuple[Path, Path],
+    capsys: CaptureFixture,
+) -> None:
+    """Test manual path entry with a nonexistent file.
+
+    Entering a path that doesn't resolve to an existing file should print an
+    error and return to the main selection prompt instead of raising.
+    """
+    monkeypatch.setattr(config, "input_data_dir", tmp_path)
+    with patch("typer.prompt", side_effect=[0, "missing.out", 1]):
+        result: Path = user_file_select()
+    assert result == _test_files[0]
+    assert "File not found" in capsys.readouterr().out
+
+
 def test_user_file_select_formats_embedded_timestamp(
     tmp_path: Path,
     monkeypatch: MonkeyPatch,
