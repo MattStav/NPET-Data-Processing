@@ -25,10 +25,12 @@ from NPET_DP.processing.helpers import (
 @pytest.fixture(
     scope="module",
     params=[
-        pytest.param((1500, -1), id="once"),
-        pytest.param((1500000, -2), id="twice"),
+        pytest.param((1500, -1), id="once_downscale"),
+        pytest.param((1500000, -2), id="twice_downscale"),
         pytest.param((500, 0), id="pass"),
-        pytest.param((33_000_000_000_000_000, -5), id="large"),
+        pytest.param((33_000_000_000_000_000, -5), id="large_downscale"),
+        pytest.param((0.05, 1), id="once_upscale"),
+        pytest.param((5E-15, 5), id="large_upscale"),
     ],
 )
 def test_num(request: FixtureRequest) -> tuple[float, int]:
@@ -102,7 +104,7 @@ def test_auto_scale_num_max_scale(max_scale: int, test_num: tuple[float, int]) -
     Test that auto-scaling respects that max defined scale iter.
     """
     _, scale = auto_scale_num(test_num[0], max_scale=max_scale)
-    assert scale == max(test_num[1], -max_scale)
+    assert abs(scale) == min(abs(test_num[1]), abs(max_scale))
 
 
 @pytest.mark.parametrize(
