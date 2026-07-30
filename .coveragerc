@@ -4,6 +4,8 @@ source = src
 # Required to measure code covered in subprocesses
 patch = subprocess
 parallel = true
+omit =
+    src/NPET_DP/_version.py
 
 [report]
 precision = 2

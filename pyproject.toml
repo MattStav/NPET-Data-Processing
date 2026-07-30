@@ -69,6 +69,3 @@ dev = [
     "pytest-rerunfailures>=16.1",
     "pytest-cov>=7.0.0",
 ]
-
-[tool.coverage.run]
-omit = ["src/NPET_DP/_version.py"]
