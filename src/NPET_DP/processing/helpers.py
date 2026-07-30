@@ -30,8 +30,6 @@ def validate_inputs[**P, R](func: Callable[P, R]) -> Callable[P, R]:
         bound = sig.bind(*args, **kwargs)
         bound.apply_defaults()
         for name in data_params:
-            if name not in bound.arguments:
-                continue  # e.g., optional param not supplied
             value = bound.arguments[name]
             check_data_structure(value, arg_name=name)
         return func(*args, **kwargs)
