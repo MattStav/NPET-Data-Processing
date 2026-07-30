@@ -116,13 +116,19 @@ def plot_histogram(
     )
     if len(signal_data) != 0:
         # Add the Gaussian curve
-        sc_mean, sc_mean_iter = auto_scale_num(signal_data.femto.mean())
-        sc_std, sc_std_iter = auto_scale_num(signal_data.femto.std())
+        signal_mean: float = float(signal_data.femto.mean())
+        sc_mean, sc_mean_iter = auto_scale_num(signal_mean)
+        signal_std: float = float(signal_data.femto.std())
+        sc_std, sc_std_iter = auto_scale_num(signal_std)
         x = np.linspace(sc_bgr.min(), sc_bgr.max(), bin_count * 10)
         # Correction for the STD being in different units
         std_correct = scale_num(sc_std, sc_mean_iter - sc_std_iter)
-        gaussian = np.exp(-((x - sc_mean) ** 2) / (2 * std_correct**2))
-        gaussian *= np.max(counts) / np.max(gaussian)
+        gaussian: NDArray[np.floating] = np.exp(
+            -((x - sc_mean) ** 2) / (2 * std_correct**2)
+        )
+        max_gaussian = np.max(gaussian)
+        max_counts: np.floating = np.max(counts)
+        gaussian *= max_counts / max_gaussian
         plt.plot(
             x,
             gaussian,

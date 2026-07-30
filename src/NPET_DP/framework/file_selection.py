@@ -161,3 +161,4 @@ def user_file_select(
             return files[choice - 1]
         except IndexError:
             typer.secho("Invalid choice!", fg=typer.colors.RED)
+    raise FileNotFoundError("Failed to select file")

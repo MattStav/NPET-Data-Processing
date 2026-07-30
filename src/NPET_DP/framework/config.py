@@ -70,7 +70,8 @@ class __AppConfig(BaseModel):
 
     def prompt_frequency(self) -> None:
         """Prompt the user to enter a frequency value, which is saved to config."""
-        typer.echo(f"Current data gathering frequency: {self._frequency} Hz")
+        if self._frequency:
+            typer.echo(f"Current data gathering frequency: {self._frequency} Hz")
         while True:
             try:
                 self.frequency = typer.prompt(
@@ -96,7 +97,8 @@ class __AppConfig(BaseModel):
 
     def prompt_sigma(self) -> None:
         """Prompt the user to enter a sigma value, which is saved to config."""
-        typer.echo(f"Current sigma filtering: {self._sigma}")
+        if self._sigma:
+            typer.echo(f"Current sigma filtering: {self._sigma}")
         while True:
             try:
                 self.sigma = typer.prompt(
