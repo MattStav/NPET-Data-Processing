@@ -1,0 +1,17 @@
+[run]
+# What to measure coverage for
+source = src
+# Required to measure code covered in subprocesses
+patch = subprocess
+parallel = true
+
+[report]
+precision = 2
+exclude_lines =
+    pragma: no cover
+    if __name__ == .__main__.:
+    def __repr__
+    raise AssertionError
+    raise NotImplementedError
+    if TYPE_CHECKING:
+    @abstractmethod
