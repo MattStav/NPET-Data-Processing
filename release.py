@@ -1,9 +1,8 @@
-from typing import Literal, get_args
 import subprocess
+from typing import Literal, get_args
 
 import typer
-from click import Choice  # Included in typer
-
+from click import Choice
 
 """
 This script is used to semi-automate the release process.
@@ -16,19 +15,21 @@ _col = typer.colors
 
 
 def __run_command(cmd: list[str], check: bool = True) -> str:
-    """
-    Runs a shell cmd and returns the output.
+    """Run a shell cmd and return the output.
+
     :param cmd: The command to run.
     :param check: Whether to check the return code. If True, an exception is raised if the command fails.
     :return: The output of the command.
     """
     typer.echo(f"Executing: {' '.join(cmd)}")
-    result = subprocess.run(cmd, capture_output=True, text=True, check=check)
+    if not cmd[0] in ("uv", "git"):
+        raise ValueError(f"Unexpected command: {' '.join(cmd)}")
+    result = subprocess.run(cmd, capture_output=True, text=True, check=check)  # noqa: S603
     return result.stdout.strip()
 
 
 def __get_latest_version() -> str:
-    """Gets the latest version using git describe."""
+    """Get the latest version using git describe."""
     cmd: list[str] = ["git", "describe", "--tags", "--abbrev=0"]
     tag: str = __run_command(cmd, check=False).lstrip("v")
     if not tag:
@@ -38,8 +39,8 @@ def __get_latest_version() -> str:
 
 
 def __increment_version(version: str, update_type: _VERSIONS_TYPE) -> str:
-    """
-    Increments the version based on the update type.
+    """Increment the version based on the update type.
+
     :param version: The current version.
     :param update_type: The type of update (major, minor, patch).
     :return: The new version.
@@ -60,8 +61,8 @@ def __increment_version(version: str, update_type: _VERSIONS_TYPE) -> str:
     return f"{parts[0]}.{parts[1]}.{parts[2]}"
 
 
-def main():
-    """Main function to run the release process."""
+def main() -> None:
+    """Run the release process."""
     typer.secho("Starting release process...", fg=_col.CYAN)
     if __run_command(["git", "status", "--short"]):
         typer.secho("There are uncommitted changes in the repository!", fg=_col.YELLOW)
@@ -85,7 +86,7 @@ def main():
     try:
         __run_command(["git", "push", "origin", new_tag])
         typer.secho(f"Pushed tag {new_tag} to remote", fg=_col.GREEN)
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         typer.echo(f"Failed to push tag: {e}", err=True)
         typer.secho("Tag remains locally! DELETE IT!", fg=_col.RED)
         raise typer.Exit(1)
