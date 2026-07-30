@@ -284,7 +284,7 @@ def test_validate_inputs_requires_data_param() -> None:
     "call",
     (
         pytest.param(lambda func, data: func(data), id="positional"),
-        pytest.param(lambda func, data: func(data=data), id="keyword"),
+        pytest.param(lambda func, data: func(data_test=data), id="keyword"),
     ),
 )
 def test_validate_inputs_passes_valid_data(call: Callable) -> None:
@@ -312,7 +312,7 @@ def test_validate_inputs_passes_valid_data(call: Callable) -> None:
     "call",
     (
         pytest.param(lambda func, data: func(data), id="positional"),
-        pytest.param(lambda func, data: func(data=data), id="keyword"),
+        pytest.param(lambda func, data: func(data_test=data), id="keyword"),
     ),
 )
 def test_validate_inputs_rejects_invalid_data(
