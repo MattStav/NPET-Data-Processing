@@ -1,6 +1,7 @@
 import subprocess
 import sys
 from importlib.metadata import version
+from typing import Literal
 
 import pytest
 
@@ -8,8 +9,13 @@ from NPET_DP.framework.constants import APP_NAME, PACKAGE_NAME
 
 
 @pytest.mark.parametrize("arg", ("-v", "--version"))
-def test_version_prints_correctly(arg) -> None:
-    result = subprocess.run(
+def test_version_prints_correctly(arg: Literal["-v", "--version"]) -> None:
+    """Test version printing is correct.
+
+    Test that the package can properly print its own version when prompted by arguments.
+    This should also print the package name.
+    """
+    result = subprocess.run(  # noqa: S603
         [sys.executable, "-m", "NPET_DP", arg],
         capture_output=True,
         text=True,

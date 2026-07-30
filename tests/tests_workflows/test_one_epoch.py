@@ -1,13 +1,16 @@
 from pathlib import Path
 from unittest.mock import patch
 
-from NPET_DP.workflows.one_epoch import main_one_epoch
 from NPET_DP.framework.config import config
 from NPET_DP.framework.path_handler import get_plot_path
+from NPET_DP.workflows.one_epoch import main_one_epoch
 
 
-def test_returns_when_no_files():
-    """Test that the function returns when there is no file to process"""
+def test_returns_when_no_files() -> None:
+    """Test return when no file.
+
+    Test that workflow returns when there is no file to process.
+    """
     with (
         patch(
             "NPET_DP.workflows.one_epoch.user_file_select",
@@ -21,7 +24,7 @@ def test_returns_when_no_files():
     mock_plot.assert_not_called()
 
 
-def test_main_one_epoch_creates_a_plot(data_dir: Path, tmp_path: Path):
+def test_main_one_epoch_creates_a_plot(data_dir: Path, tmp_path: Path) -> None:
     """Test that the main function successfully creates a plot and saves it to the correct path."""
     test_file: Path = data_dir / "test_data_STOP.out"
     config.frequency = 500  # Preset the frequency to avoid user input during the test

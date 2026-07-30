@@ -1,7 +1,6 @@
 import os
 import subprocess
 import sys
-from importlib.metadata import version
 from pathlib import Path
 
 import pytest
@@ -21,11 +20,12 @@ def uv_tool_env(tmp_path_factory: pytest.TempPathFactory) -> dict[str, str]:
 @pytest.fixture(scope="session")
 def npet_dp_installed_as_uv_tool(wheel_file: Path, uv_tool_env: dict[str, str]) -> Path:
     """Install the built wheel as uv tool and return the tool's bin dir."""
-    result: subprocess.CompletedProcess = subprocess.run(
-        ["uv", "tool", "install", "--force", str(wheel_file)],
+    result: subprocess.CompletedProcess = subprocess.run(  # noqa: S603
+        ["uv", "tool", "install", "--force", str(wheel_file)],  # noqa: S607
         capture_output=True,
         text=True,
         env=uv_tool_env,
+        check=False,
     )
     assert result.returncode == 0, f"Failed to install tool: {result.stderr}"
     return Path(uv_tool_env["UV_TOOL_BIN_DIR"])
@@ -34,16 +34,20 @@ def npet_dp_installed_as_uv_tool(wheel_file: Path, uv_tool_env: dict[str, str]) 
 @pytest.mark.smoke
 @pytest.mark.xdist_group(name="package")
 def test_npet_dp_command_callable(npet_dp_installed_as_uv_tool: Path) -> None:
-    """Test that `npet-dp` launches and can be terminated via the menu."""
+    """Test `npet-dp` command.
+
+    Test that `npet-dp` launches the app and can be terminated via the menu.
+    """
     executable: str = "npet-dp.exe" if sys.platform == "win32" else "npet-dp"
     binary: Path = npet_dp_installed_as_uv_tool / executable
     assert binary.is_file(), f"npet-dp executable not found: {binary}"
-    result: subprocess.CompletedProcess = subprocess.run(
+    result: subprocess.CompletedProcess = subprocess.run(  # noqa: S603
         [str(binary)],
         input="0\n",
         capture_output=True,
         text=True,
         timeout=60,
+        check=False,
     )
     assert result.returncode == 0, f"npet-dp failed: {result.stderr}"
     assert "terminated" in result.stdout, "Expected app to launch and exit cleanly"
@@ -55,14 +59,18 @@ def test_uv_tool_run_npet_dp_callable(
     wheel_file: Path,
     uv_tool_env: dict[str, str],
 ) -> None:
-    """Test that `uv tool run NPET_DP` launches and can be terminated via the menu."""
-    result: subprocess.CompletedProcess = subprocess.run(
-        ["uv", "tool", "run", "--from", str(wheel_file), "npet-dp"],
+    """Test launching as python package.
+
+    Test that `uv tool run NPET_DP` launches the app and can be terminated via the menu.
+    """
+    result: subprocess.CompletedProcess = subprocess.run(  # noqa: S603
+        ["uv", "tool", "run", "--from", str(wheel_file), "npet-dp"],  # noqa: S607
         input="0\n",
         capture_output=True,
         text=True,
         env=uv_tool_env,
         timeout=60,
+        check=False,
     )
     assert result.returncode == 0, f"uv tool run NPET_DP failed: {result.stderr}"
     assert "terminated" in result.stdout, "Expected app to launch and exit cleanly"

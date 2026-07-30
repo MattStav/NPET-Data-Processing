@@ -203,11 +203,14 @@ def recursive_sigma_filter(
     :return: Filtered data and number of filtering iterations.
     """
     assert max_iter > 0, "Max iterations must be positive"
+    assert data.size > 0, "Data must not be empty"
     new_data: NDArray = data.copy()
     prev_data_len: int = 0
     iteration: int = 0
     # Iterate until the data is no longer changing in size
     while prev_data_len != len(new_data):
+        if iteration == max_iter:
+            raise RuntimeError(f"Max iterations reached!: {iteration}")
         prev_data_len = len(new_data)
         values: NDArray = new_data["femto"]
         mn: float = float(np.mean(values))
@@ -217,8 +220,6 @@ def recursive_sigma_filter(
         high_filter: NDArray[np.bool_] = np.asarray(values <= mn + sigma_mult * std)
         new_data = new_data[low_filter & high_filter]
         iteration += 1
-        if iteration == max_iter:
-            raise RuntimeError(f"Max iterations reached!: {iteration}")
     check_data_structure(new_data)
     return new_data, iteration
 

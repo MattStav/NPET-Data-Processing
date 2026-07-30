@@ -1,7 +1,7 @@
 import subprocess
 import sys
-from subprocess import CompletedProcess
 from pathlib import Path
+from subprocess import CompletedProcess
 
 import pytest
 
@@ -10,19 +10,25 @@ import pytest
 def build_wheel(
     tmp_path_factory: pytest.TempPathFactory,
 ) -> tuple[CompletedProcess, Path]:
-    """Build the wheel and return the result and the build directory."""
+    """Build the wheel.
+
+    The wheel is built using uv in a subprocess call.
+    :return: Subprocess result and the build directory.
+    """
     build_dir: Path = tmp_path_factory.mktemp("build")
-    result: CompletedProcess = subprocess.run(
-        ["uv", "build", "--out-dir", str(build_dir), "--wheel"],
+    result: CompletedProcess = subprocess.run(  # noqa: S603
+        ["uv", "build", "--out-dir", str(build_dir), "--wheel"],  # noqa: S607
         capture_output=True,
         text=True,
+        check=False,
     )
     return result, build_dir
 
 
 @pytest.fixture(scope="session")
 def wheel_path(build_wheel: tuple[CompletedProcess, Path]) -> Path:
-    """Get the path to the built wheel."""
+    """Get the path to the directory where the wheel was built."""
+    assert build_wheel[0].returncode == 0, f"Build failed: {build_wheel[0].stderr}"
     return build_wheel[1].resolve()
 
 
@@ -41,7 +47,12 @@ def wheel_file(wheel_path: Path) -> Path:
 
 
 def get_system_specific_pypath(venv: Path) -> Path:
-    """Get the system-specific python path."""
+    """Get the system-specific python path.
+
+    Given the path to venv get the Path to python bin.
+    :param venv: Path to venv
+    :return: Path to python bin
+    """
     return (
         venv / "Scripts" / "python.exe"
         if sys.platform == "win32"

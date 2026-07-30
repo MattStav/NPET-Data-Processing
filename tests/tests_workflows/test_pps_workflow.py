@@ -1,15 +1,15 @@
-from NPET_DP.processing.data_struct import NPETData
-import numpy as np
-
-from NPET_DP.processing.calculations import process_overflow
-from NPET_DP.processing.helpers import (
-    import_data,
-    auto_scale_num,
-    get_unit,
-)
 from pathlib import Path
 
+import numpy as np
 import pytest
+
+from NPET_DP.processing.calculations import process_overflow
+from NPET_DP.processing.data_struct import NPETData
+from NPET_DP.processing.helpers import (
+    auto_scale_num,
+    get_unit,
+    import_data,
+)
 
 
 @pytest.mark.parametrize(
@@ -27,7 +27,12 @@ def test_pps_workflow(
     expected_mean_unit: str,
     expected_std: float,
     expected_std_unit: str,
-):
+) -> None:
+    """Test the PPS workflow.
+
+    Use the test data saved in the project to ensure that the workflow arrives to the correct results.
+    This test uses the raw workflow.
+    """
     data_p: Path = data_dir / test_file
     assert data_p.exists()
     data_pps = import_data(data_p)
@@ -55,13 +60,18 @@ def test_pps_workflow(
     ],
 )
 def test_pps_workflow_npet_data(
-        data_dir: Path,
-        test_file: str,
-        expected_mean: float,
-        expected_mean_unit: str,
-        expected_std: float,
-        expected_std_unit: str,
-):
+    data_dir: Path,
+    test_file: str,
+    expected_mean: float,
+    expected_mean_unit: str,
+    expected_std: float,
+    expected_std_unit: str,
+) -> None:
+    """Test the PPS workflow.
+
+    Use the test data saved in the project to ensure that the workflow arrives to the correct results.
+    This test uses the NPETData structure workflow.
+    """
     data_p: Path = data_dir / test_file
     assert data_p.exists()
     data: NPETData = NPETData.from_path(data_p)

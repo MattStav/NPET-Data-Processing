@@ -3,18 +3,22 @@ from pathlib import Path
 import numpy as np
 from numpy.typing import NDArray
 
-from NPET_DP.processing.data_struct import NPETData
-from NPET_DP.processing.helpers import import_data, auto_scale_num, get_unit
-
 from NPET_DP.processing.calculations import (
-    discard_rows_until_first_col_match,
     calculate_delay,
     detect_signal,
+    discard_rows_until_first_col_match,
     recursive_sigma_filter,
 )
+from NPET_DP.processing.data_struct import NPETData
+from NPET_DP.processing.helpers import auto_scale_num, get_unit, import_data
 
 
-def test_two_epochs(data_dir):
+def test_two_epochs(data_dir: Path) -> None:
+    """Test the TWO EPOCHS workflow.
+
+    Use the test data saved in the project to ensure that the workflow arrives to the correct results.
+    This test uses the raw workflow.
+    """
     start_p: Path = data_dir / "test_data_START.out"
     stop_p: Path = data_dir / "test_data_STOP.out"
     data_start = import_data(start_p)
@@ -61,7 +65,12 @@ def test_two_epochs(data_dir):
     assert np.isclose(ret_rate, 4.86, atol=0.005), f"Unexpected return rate: {ret_rate}"
 
 
-def test_two_epochs_npet_data(data_dir: Path):
+def test_two_epochs_npet_data(data_dir: Path) -> None:
+    """Test the TWO EPOCHS workflow.
+
+    Use the test data saved in the project to ensure that the workflow arrives to the correct results.
+    This test uses the NPETData structure workflow.
+    """
     start_p: Path = data_dir / "test_data_START.out"
     stop_p: Path = data_dir / "test_data_STOP.out"
     data_start = NPETData.from_path(start_p)

@@ -1,15 +1,18 @@
 import _tkinter
 from pathlib import Path
+from unittest.mock import call, patch
 
 import pytest
-from unittest.mock import patch, call
 
-from NPET_DP.workflows.pps import main_pps
 from NPET_DP.framework.path_handler import get_plot_path
+from NPET_DP.workflows.pps import main_pps
 
 
-def test_returns_when_no_files():
-    """Test that the function returns when there is no file to process"""
+def test_returns_when_no_files() -> None:
+    """Test return when no file.
+
+    Test that workflow returns when there is no file to process.
+    """
     with patch(
         "NPET_DP.workflows.pps.user_file_select",
         side_effect=FileNotFoundError,
@@ -19,7 +22,7 @@ def test_returns_when_no_files():
 
 @pytest.mark.flaky(reruns=3, only_rerun=_tkinter.TclError.__name__)
 @pytest.mark.parametrize("filename", ["test_PPS.out", "test_PPS_long.out"])
-def test_main_pps_creates_a_plot(data_dir: Path, tmp_path: Path, filename: str):
+def test_main_pps_creates_a_plot(data_dir: Path, tmp_path: Path, filename: str) -> None:
     """Test that the main function successfully creates a plot and saves it to the correct path."""
     test_file: Path = data_dir / filename
     with (
