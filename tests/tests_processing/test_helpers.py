@@ -172,7 +172,7 @@ def test_scale_num_rejects_non_numeric() -> None:
     """Test that scale_num raises an AssertionError for non-numeric input."""
     with pytest.raises(AssertionError):
         # noinspection bad-argument-type
-        scale_num("1500", 1)
+        scale_num("1500", 1)  # ty:ignore[invalid-argument-type]
 
 
 @pytest.mark.parametrize(
