@@ -52,5 +52,7 @@ def test_pps_cli_arrives_at_correct_results(
         )
 
     assert result.exit_code == 0, result.output
-    assert f"{name} mean delay = {expected_mean:.5f} {expected_mean_unit}" in result.output
+    assert (
+        f"{name} mean delay = {expected_mean:.5f} {expected_mean_unit}" in result.output
+    )
     assert f"{name} STD = {expected_std:.4f} {expected_std_unit}" in result.output

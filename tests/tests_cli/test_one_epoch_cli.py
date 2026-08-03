@@ -42,9 +42,7 @@ def test_one_epoch_cli_arrives_at_correct_results(
     with (
         patch("NPET_DP.workflows.one_epoch.plt.show"),
         patch("NPET_DP.framework.path_handler.get_path", return_value=plots_dir),
-        patch(
-            "NPET_DP.workflows.one_epoch.__plot_singular_data"
-        ) as mock_plot_singular,
+        patch("NPET_DP.workflows.one_epoch.__plot_singular_data") as mock_plot_singular,
     ):
         result = runner.invoke(
             npet_dp,
