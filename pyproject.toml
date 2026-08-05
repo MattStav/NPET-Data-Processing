@@ -55,7 +55,8 @@ extend-select = ["I", "ANN", "D", "S", "N", "C4", "PTH"]
 # S101: disallow use of assert statements. Asserts are used for type checking.
 # N999: disallow certain names. The package name is in all caps, which is not PEP8 compliant, but it is a proper name of the package.
 # D100: each public module must have a docstring. Documenting everything is tedious.
-ignore = ["E501", "S101", "N999", "D100"]
+# D105: magic methods mostly do the thing they are supposed to do, so documenting them is tedious.
+ignore = ["E501", "S101", "N999", "D100", "D105"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["ANN401"]
