@@ -16,7 +16,7 @@ from NPET_DP.workflows.helpers import auto_range, histogram_plot_loop
 def __plot_singular_data(data: NPETData, name: str) -> None:
     """Plot a time epoch of each measurement.
 
-    The plot show data within a set bin of width 1/freq,
+    The plot shows data within a set bin of width 1/freq,
     showing the delay within each measurement time window.
     :param data: Data to be plotted, as NPETData object.
     :param name: Name of the file.

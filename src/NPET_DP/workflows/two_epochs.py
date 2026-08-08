@@ -7,7 +7,6 @@ import typer
 from bokeh.io import output_file
 from bokeh.models import HoverTool
 from bokeh.plotting import figure, show
-from matplotlib import pyplot as plt
 from numpy.typing import NDArray
 
 from NPET_DP.framework.config import config
