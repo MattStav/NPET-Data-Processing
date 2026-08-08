@@ -1,13 +1,13 @@
 import sys
-from importlib.metadata import version
 from pathlib import Path
 from typing import Annotated
 
 import typer
 from matplotlib import pyplot as plt
 
+from NPET_DP._version import __version__
 from NPET_DP.framework.config import config
-from NPET_DP.framework.constants import APP_NAME, PACKAGE_NAME
+from NPET_DP.framework.constants import APP_NAME
 from NPET_DP.framework.path_handler import open_plot_outputs
 from NPET_DP.framework.settings_menu import settings_menu
 from NPET_DP.workflows.one_epoch import main_one_epoch
@@ -33,7 +33,7 @@ def _version_callback(callback_enabled: bool) -> None:
     """
     if not callback_enabled:
         return
-    print(f"{APP_NAME} {version(PACKAGE_NAME)}")
+    print(f"{APP_NAME} {__version__}")
     raise typer.Exit()
 
 
@@ -59,7 +59,7 @@ def arg_parse(
 ) -> None:
     """Parse top-level CLI options and launch the interactive menu if no subcommand given."""
     typer.secho(
-        f"{APP_NAME} launched: v{version(PACKAGE_NAME)}",
+        f"{APP_NAME} launched: v{__version__}",
         fg=typer.colors.GREEN,
         bold=True,
     )
