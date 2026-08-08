@@ -16,7 +16,7 @@ def test_two_epochs_cli_arrives_at_correct_results(
 
     Drives the app the same way a user would: launches the CLI, picks the
     dual-epoch menu option, selects the START/STOP files and answers the
-    subsequent prompts, then checks the printed results match the values
+    following prompts, then checks the printed results match the values
     established by the raw workflow test.
     """
     input_dir: Path = tmp_path / "data"
@@ -35,7 +35,6 @@ def test_two_epochs_cli_arrives_at_correct_results(
     user_input = "2\n0\ntest_data_START.out\nno\n0\n0\n"
     with (
         patch("NPET_DP.workflows.two_epochs.show"),
-        patch("NPET_DP.workflows.two_epochs.plt.show"),
         patch("NPET_DP.framework.path_handler.get_path", return_value=plots_dir),
     ):
         result = runner.invoke(
