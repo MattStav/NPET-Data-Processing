@@ -1,5 +1,4 @@
 import numpy as np
-from allantools import tdev
 from matplotlib import pyplot as plt
 from matplotlib import ticker
 from numpy.typing import NDArray
@@ -24,6 +23,9 @@ def plot_time_deviation(data: NPETData, frequency: int, name: str) -> None:
     :param frequency: Frequency of the data
     :param name: Name of the file.
     """
+    # The allantools package is poorly made and its import is very timely, hence the lazy import
+    from allantools import tdev
+
     assert frequency > 0, f"Frequency must be positive: {frequency}"
     assert name, "Name must not be empty"
     # Calculate TDEV
