@@ -53,7 +53,7 @@ def __match_data(*, data_start: NPETData, data_stop: NPETData) -> _Data:
 
 
 def __plot_all_scatter(data: NPETData, signal: tuple[NDArray[np.bool_], ...]) -> None:
-    """Plot all delays in scatter graph.
+    """Plot all delays in a scatter graph.
 
     Delay data is on y-axis in the order of events.
     Uses interactive high-performance bokeh graphs.
@@ -175,4 +175,3 @@ def main_two_epochs() -> None:
     if deg > 0:
         name += f" without pol deg {deg} drift"
     plot_time_deviation(no_drift, frequency, name)
-    plt.close()

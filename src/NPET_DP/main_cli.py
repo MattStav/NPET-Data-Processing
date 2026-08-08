@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Annotated
 
 import typer
+from matplotlib import pyplot as plt
 
 from NPET_DP.framework.config import config
 from NPET_DP.framework.constants import APP_NAME, PACKAGE_NAME
@@ -87,12 +88,15 @@ def main_menu() -> None:
         match user_choice:
             case 1:
                 typer.secho("\nProcessing single epoch data", fg=typer.colors.CYAN)
+                plt.close("all")
                 main_one_epoch()
             case 2:
                 typer.secho("\nProcessing dual epochs data", fg=typer.colors.CYAN)
+                plt.close("all")
                 main_two_epochs()
             case 3:
                 typer.secho("\nProcessing PPS data", fg=typer.colors.CYAN)
+                plt.close("all")
                 main_pps()
             case 4:
                 settings_menu()

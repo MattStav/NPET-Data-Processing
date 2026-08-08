@@ -53,7 +53,5 @@ def main_one_epoch() -> None:
     else:
         typer.echo("Unable to autodetect a single signal")
     if len(autodetection) != 1 and not typer.confirm("Do you want to plot histogram?"):
-        plt.close()
         return
     histogram_plot_loop(mod_data, epoch_file_path.stem)
-    plt.close()
