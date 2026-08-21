@@ -149,8 +149,8 @@ def main_two_epochs() -> None:
     except IndexError:
         typer.secho("No matching signals found!", fg=col.RED)
         return
-    typer.echo("\nCalculating the delay between the START and STOP measured data")
     frequency: int = config.frequency
+    typer.echo("\nCalculating the delay between the START and STOP measured data ...")
     delays: NPETData = data_start.calc_delay_start(
         stop=matching_data.data_stop,
         frequency=frequency,
