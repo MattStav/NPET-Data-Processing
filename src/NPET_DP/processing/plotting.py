@@ -77,6 +77,10 @@ def plot_time_deviation(data: NPETData, frequency: int, name: str) -> None:
     plt.show(block=False)
 
 
+def __interp_crossing(x1, x2, y1, y2, y_target):
+    return x1 + (y_target - y1) * (x2 - x1) / (y2 - y1)
+
+
 def plot_histogram(
     *,
     all_data: NPETData,
@@ -108,7 +112,7 @@ def plot_histogram(
     hist_data.append(sc_bgr)
     hist_labels.append("Other measured data")
     hist_colors.append("blue")
-    counts, _, _ = plt.hist(
+    counts, bins, _ = plt.hist(
         hist_data,
         bins=bins,
         color=hist_colors,
@@ -116,8 +120,56 @@ def plot_histogram(
         label=hist_labels,
         stacked=True,
     )
+    # Mark FWHM in the figure
+    counts_arr: NDArray[np.floating] = np.asarray(counts)
+    total_counts: NDArray[np.floating] = (
+        counts_arr if counts_arr.ndim == 1 else counts_arr[-1]
+    )
+    bin_centers: NDArray[np.floating] = 0.5 * (bins[:-1] + bins[1:])
+    half_max: float = float(np.max(total_counts)) / 2
+    above: NDArray[np.bool_] = np.asarray(total_counts >= half_max)
+    indices: NDArray[np.int_] = np.where(above)[0]
+    left_idx, right_idx = indices[0], indices[-1]
+    x_left = __interp_crossing(
+        bin_centers[left_idx - 1],
+        bin_centers[left_idx],
+        total_counts[left_idx - 1],
+        total_counts[left_idx],
+        half_max,
+    )
+    x_right = __interp_crossing(
+        bin_centers[right_idx],
+        bin_centers[right_idx + 1],
+        total_counts[right_idx],
+        total_counts[right_idx + 1],
+        half_max,
+    )
+    fwhm = x_right - x_left
+    x_range = bins[-1] - bins[0]
+    offset = x_range * 0.08  # tweak the fraction to taste
+    plt.annotate(
+        "",
+        xy=(x_left, half_max),
+        xytext=(x_left - offset, half_max),
+        arrowprops={"arrowstyle": "->", "color": "black", "lw": 2},
+    )
+    plt.annotate(
+        "",
+        xy=(x_right, half_max),
+        xytext=(x_right + offset, half_max),
+        arrowprops={"arrowstyle": "->", "color": "black", "lw": 2},
+    )
+    plt.text(
+        x_right + offset * 1.15,
+        half_max,
+        f"FWHM = {fwhm * 1000:.2f} ps",
+        color="black",
+        ha="left",
+        va="center",
+        fontsize=11,
+    )
+    # Mark the Gaussian curve in the figure
     if len(signal_data) != 0:
-        # Add the Gaussian curve
         signal_mean: float = float(signal_data.femto.mean())
         sc_mean, sc_mean_iter = auto_scale_num(signal_mean)
         signal_std: float = float(signal_data.femto.std())
