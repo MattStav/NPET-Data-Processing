@@ -77,7 +77,22 @@ def plot_time_deviation(data: NPETData, frequency: int, name: str) -> None:
     plt.show(block=False)
 
 
-def __interp_crossing(x1, x2, y1, y2, y_target):
+def __interp_crossing(
+    x1: float,
+    x2: float,
+    y1: float,
+    y2: float,
+    y_target: float,
+) -> float:
+    """Linearly interpolate the x-value where the line through (x1, y1)-(x2, y2) crosses y_target.
+
+    :param x1: X-coordinate of the first point.
+    :param x2: X-coordinate of the second point.
+    :param y1: Y-coordinate of the first point.
+    :param y2: Y-coordinate of the second point.
+    :param y_target: Y-value to find the crossing x-value for.
+    :return: X-value at which the line reaches y_target.
+    """
     return x1 + (y_target - y1) * (x2 - x1) / (y2 - y1)
 
 
@@ -131,17 +146,17 @@ def plot_histogram(
     indices: NDArray[np.int_] = np.where(above)[0]
     left_idx, right_idx = indices[0], indices[-1]
     x_left = __interp_crossing(
-        bin_centers[left_idx - 1],
-        bin_centers[left_idx],
-        total_counts[left_idx - 1],
-        total_counts[left_idx],
+        float(bin_centers[left_idx - 1]),
+        float(bin_centers[left_idx]),
+        float(total_counts[left_idx - 1]),
+        float(total_counts[left_idx]),
         half_max,
     )
     x_right = __interp_crossing(
-        bin_centers[right_idx],
-        bin_centers[right_idx + 1],
-        total_counts[right_idx],
-        total_counts[right_idx + 1],
+        float(bin_centers[right_idx]),
+        float(bin_centers[right_idx + 1]),
+        float(total_counts[right_idx]),
+        float(total_counts[right_idx + 1]),
         half_max,
     )
     fwhm = x_right - x_left
