@@ -158,6 +158,7 @@ def detect_signal(
     and re-applied to just that signal's own data, which can split it into several narrower signals.
     Each resulting signal is checked again and refined further if it is still too wide, up until
     the percentage threshold would exceed 20%, at which point the signal is accepted as-is.
+    Final signals containing less than 1.5% of the data are discarded.
     :param data_delay: Data to be processed, the femtoseconds delay column from the data.
     :param bin_size: The size of the bins in femtoseconds into which the data will be split (keyword-only).
     :param init_percentage_threshold: The percentage of data that must be in a bin to be considered a signal (keyword-only).
@@ -232,7 +233,11 @@ def detect_signal(
             )
         else:
             masks_of_horizontal_lines.append(mask)
-    return tuple(masks_of_horizontal_lines)
+    # Discard final signals that end up too small to be meaningful
+    min_final_threshold: float = len(data_delay) * 1.5 / 100
+    return tuple(
+        mask for mask in masks_of_horizontal_lines if np.sum(mask) >= min_final_threshold
+    )
 
 
 @validate_inputs
