@@ -145,20 +145,28 @@ def plot_histogram(
     above: NDArray[np.bool_] = np.asarray(total_counts >= half_max)
     indices: NDArray[np.int_] = np.where(above)[0]
     left_idx, right_idx = indices[0], indices[-1]
-    x_left = __interp_crossing(
-        float(bin_centers[left_idx - 1]),
-        float(bin_centers[left_idx]),
-        float(total_counts[left_idx - 1]),
-        float(total_counts[left_idx]),
-        half_max,
-    )
-    x_right = __interp_crossing(
-        float(bin_centers[right_idx]),
-        float(bin_centers[right_idx + 1]),
-        float(total_counts[right_idx]),
-        float(total_counts[right_idx + 1]),
-        half_max,
-    )
+    # If the peak's above-half-max region touches the outer edge, there is no
+    # neighboring bin to interpolate against, so fall back to the bin edge itself.
+    if left_idx == 0:
+        x_left = float(bins[0])
+    else:
+        x_left = __interp_crossing(
+            float(bin_centers[left_idx - 1]),
+            float(bin_centers[left_idx]),
+            float(total_counts[left_idx - 1]),
+            float(total_counts[left_idx]),
+            half_max,
+        )
+    if right_idx == len(total_counts) - 1:
+        x_right = float(bins[-1])
+    else:
+        x_right = __interp_crossing(
+            float(bin_centers[right_idx]),
+            float(bin_centers[right_idx + 1]),
+            float(total_counts[right_idx]),
+            float(total_counts[right_idx + 1]),
+            half_max,
+        )
     fwhm = x_right - x_left
     x_range = bins[-1] - bins[0]
     offset = x_range * 0.08  # tweak the fraction to taste
