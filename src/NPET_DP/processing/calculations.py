@@ -146,47 +146,92 @@ def calculate_delay(
 def detect_signal(
     data_delay: NDArray[np.int_],
     *,
-    bin_size: int = 10_000_000,  # fs = 10 ns
-    percentage_threshold: float = 0.8,
+    bin_size: int = 1_000_000,  # fs = 1 ns
+    init_percentage_threshold: float = 0.08,
+    max_signal_width: int = 1_000_000,  # fs = 1 ns
 ) -> tuple[NDArray[np.bool_], ...]:
     """Detect signals in the delay data by identifying horizontal lines (clusters of similar delay values).
 
     Delays where data counts are above the threshold are considered signals.
     The default values are selected for detecting a 20 ps width pulse with at least 2% return rate.
+    Any detected signal wider than max_signal_width is refined: the detection threshold is doubled
+    and re-applied to just that signal's own data, which can split it into several narrower signals.
+    Each resulting signal is checked again and refined further if it is still too wide, up until
+    the percentage threshold would exceed 20%, at which point the signal is accepted as-is.
     :param data_delay: Data to be processed, the femtoseconds delay column from the data.
     :param bin_size: The size of the bins in femtoseconds into which the data will be split (keyword-only).
-    :param percentage_threshold: The percentage of data that must be in a bin to be considered a signal (keyword-only).
+    :param init_percentage_threshold: The percentage of data that must be in a bin to be considered a signal (keyword-only).
+    :param max_signal_width: Maximum signal width in femtoseconds before the threshold is doubled and the signal re-detected (keyword-only).
     :return: Boolean masks indicating detected signals.
     Each mask corresponds to a detected signal (horizontal line) in the data.
     """
     assert data_delay.ndim == 1, "Data must be 1D"
     assert bin_size > 0, "Bin size must be positive"
-    assert 0 <= percentage_threshold <= 10, "Percentage threshold must be [0,10]"
-    # Calculate the number of bins needed to cover the data range
-    data_range: int = data_delay.max() - data_delay.min()
-    bin_count: int = int(np.ceil(data_range / bin_size)) or 1
-    # Create a histogram with a specified bin size
-    counts, bin_edges = np.histogram(
-        data_delay,
-        bins=bin_count,
-        range=(data_delay.min(), data_delay.max()),
-    )
-    threshold: float = len(data_delay) * percentage_threshold / 100
-    high_density_bins: NDArray[np.int_] = np.where(counts > threshold)[0]
-    # Find consecutive groups of high-density bins and group them together
-    groups = np.split(
-        high_density_bins,
-        np.where(np.diff(high_density_bins) != 1)[0] + 1,
-    )
-    # Filter out the data in each detected group
+    assert 0 <= init_percentage_threshold <= 10, "Percentage threshold must be [0,10]"
+    assert max_signal_width > 0, "Max signal width must be positive"
+    max_percentage_threshold: float = 20
+
+    def find_groups(
+        mask: NDArray[np.bool_],
+        percentage_threshold: float,
+    ) -> list[NDArray[np.bool_]]:
+        """Detect horizontal lines within the given subset of data_delay, above the given threshold.
+
+        :param mask: Boolean mask indicating which data points to consider.
+        :param percentage_threshold: The percentage of data that must be in a bin to be considered a signal.
+        :return: List of boolean masks indicating detected signals within the subset.
+        """
+        subset: NDArray[np.int_] = data_delay[mask]
+        # Calculate the number of bins needed to cover the data range
+        data_range: int = subset.max() - subset.min()
+        bin_count: int = int(np.ceil(data_range / bin_size)) or 1
+        # Create a histogram with a specified bin size
+        counts, bin_edges = np.histogram(
+            subset,
+            bins=bin_count,
+            range=(subset.min(), subset.max()),
+        )
+        threshold: float = len(data_delay) * percentage_threshold / 100
+        high_density_bins: NDArray[np.int_] = np.where(counts > threshold)[0]
+        # Find consecutive groups of high-density bins and group them together
+        groups = np.split(
+            high_density_bins,
+            np.where(np.diff(high_density_bins) != 1)[0] + 1,
+        )
+        # Filter out the data in each detected group
+        found: list[NDArray[np.bool_]] = []
+        for group in groups:
+            if group.size == 0:
+                continue
+            low_bound: NDArray[np.bool_] = data_delay >= bin_edges[group[0]]
+            high_bound: NDArray[np.bool_] = data_delay <= bin_edges[group[-1] + 1]
+            found.append(mask & low_bound & high_bound)
+        return found
+
+    full_mask: NDArray[np.bool_] = np.ones(data_delay.shape, dtype=np.bool_)
+    # Queue of (mask, percentage_threshold) pairs still needing to be checked/refined
+    pending: list[tuple[NDArray[np.bool_], float]] = [
+        (mask, init_percentage_threshold)
+        for mask in find_groups(full_mask, init_percentage_threshold)
+    ]
     masks_of_horizontal_lines: list[NDArray[np.bool_]] = []
-    for group in groups:
-        if group.size == 0:
-            continue
-        low_bound: NDArray[np.bool_] = data_delay >= bin_edges[group[0]]
-        high_bound: NDArray[np.bool_] = data_delay <= bin_edges[group[-1] + 1]
-        mask: NDArray[np.bool_] = low_bound & high_bound
-        masks_of_horizontal_lines.append(mask)
+    while pending:
+        mask, percentage_threshold = pending.pop(0)
+        signal: NDArray[np.int_] = data_delay[mask]
+        width: int = signal.max() - signal.min()
+        if (
+            width > max_signal_width
+            and percentage_threshold * 2 <= max_percentage_threshold
+        ):
+            # Signal too wide: double the threshold and re-detect within just this signal's data,
+            # which may split it into several narrower signals to check again.
+            percentage_threshold *= 2
+            pending.extend(
+                (sub_mask, percentage_threshold)
+                for sub_mask in find_groups(mask, percentage_threshold)
+            )
+        else:
+            masks_of_horizontal_lines.append(mask)
     return tuple(masks_of_horizontal_lines)
 
 
