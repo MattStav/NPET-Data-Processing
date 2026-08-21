@@ -146,11 +146,13 @@ def calculate_delay(
 def detect_signal(
     data_delay: NDArray[np.int_],
     *,
-    bin_size: int = 40_000,  # 0.04 ns
-    percentage_threshold: float = 0.15,
+    bin_size: int = 10_000_000,  # fs = 10 ns
+    percentage_threshold: float = 0.8,
 ) -> tuple[NDArray[np.bool_], ...]:
     """Detect signals in the delay data by identifying horizontal lines (clusters of similar delay values).
 
+    Delays where data counts are above the threshold are considered signals.
+    The default values are selected for detecting a 20 ps width pulse with at least 2% return rate.
     :param data_delay: Data to be processed, the femtoseconds delay column from the data.
     :param bin_size: The size of the bins in femtoseconds into which the data will be split (keyword-only).
     :param percentage_threshold: The percentage of data that must be in a bin to be considered a signal (keyword-only).

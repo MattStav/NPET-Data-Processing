@@ -157,23 +157,12 @@ class NPETData(BaseModel):
         )
         return NPETData.from_structured_arr(ret)
 
-    def detect_signal(
-        self,
-        bin_size: int = 40_000,  # fs
-        percentage_threshold: float = 0.15,
-    ) -> tuple[NDArray[np.bool_], ...]:
+    def detect_signal(self) -> tuple[NDArray[np.bool_], ...]:
         """Detect signals in the delay data.
 
-        Delays where data counts are above the threshold are considered signals.
-        :param bin_size: The size of the bins in femtoseconds into which the data will be split.
-        :param percentage_threshold: The percentage of data that must be in a bin to be considered a signal.
         :return: Boolean masks indicating detected signals.
         """
-        return detect_signal(
-            self.femto,
-            bin_size=bin_size,
-            percentage_threshold=percentage_threshold,
-        )
+        return detect_signal(self.femto)
 
     def define_signal_range(
         self,
