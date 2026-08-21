@@ -35,6 +35,7 @@ def test_two_epochs_cli_arrives_at_correct_results(
     user_input = "2\n0\ntest_data_START.out\nno\n0\n0\n"
     with (
         patch("NPET_DP.workflows.two_epochs.show"),
+        patch("NPET_DP.processing.plotting.plt.show"),
         patch("NPET_DP.framework.path_handler.get_path", return_value=plots_dir),
     ):
         result = runner.invoke(
