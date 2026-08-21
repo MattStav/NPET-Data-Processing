@@ -1,3 +1,4 @@
+import os
 import re
 import shutil
 from collections.abc import Iterable
@@ -14,18 +15,22 @@ _DATETIME_PATTERN: re.Pattern[str] = re.compile(r"\d{8}_\d{6}")
 
 
 def __get_data_files(ignored_files: Iterable[Path]) -> tuple[Path, ...]:
-    """Get all the data files in the data directory.
+    """Get all the data files in the data directory, newest first.
 
+    Uses `os.scandir` rather than `Path.glob` + `Path.stat` so each file's mtime is
+    read from the cached directory-entry data instead of an extra stat syscall.
     :param ignored_files: Files to ignore.
-    :return: Tuple of data files.
+    :return: Tuple of data files, sorted by modification time descending.
     """
-    return tuple(
-        sorted(
-            (f for f in config.input_data_dir.glob("*.out") if f not in ignored_files),
-            key=lambda p: p.stat().st_mtime,
-            reverse=True,
-        )
-    )
+    ignored: frozenset[Path] = frozenset(ignored_files)
+    with os.scandir(config.input_data_dir) as entries:
+        matches: list[os.DirEntry[str]] = [
+            entry
+            for entry in entries
+            if entry.name.endswith(".out") and Path(entry.path) not in ignored
+        ]
+        matches.sort(key=lambda e: e.stat().st_mtime, reverse=True)
+        return tuple(Path(entry.path) for entry in matches)
 
 
 def __format_stem(stem: str) -> str:
