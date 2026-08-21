@@ -337,6 +337,79 @@ def test_detect_signal_overlapping_clusters() -> None:
     assert np.sum(masks[1]) == 10
 
 
+def test_detect_signal_splits_wide_signal_on_refinement() -> None:
+    """Test that a too-wide signal is refined by doubling the threshold.
+
+    A single wide cluster (bridged by a few low-density points) is initially detected as one
+    signal. Since it's wider than max_signal_width, the threshold is doubled and the signal is
+    re-detected using only its own data, which drops the weak bridge points and splits it into
+    two narrower signals.
+    """
+    data: npt.NDArray[np.int_] = np.array(
+        [150000] * 60
+        + [600000] * 4
+        + [900000] * 4
+        + [1200000] * 4
+        + [1500000] * 4
+        + [1950000] * 60,
+        dtype=np.int_,
+    )
+    # 136 points total. init threshold = 136 * 2 / 100 = 2.72, so even the bridge bins (4 points)
+    # pass, and everything merges into one signal spanning [150_000, 1_950_000] (width 1_800_000 fs).
+    # That's wider than max_signal_width, so the threshold doubles to 4% (a threshold = 5.44),
+    # which drops the bridge bins (count 4) and splits the signal into the two end clusters.
+    masks = detect_signal(
+        data,
+        bin_size=300000,
+        init_percentage_threshold=2,
+        max_signal_width=1_000_000,
+    )
+    assert len(masks) == 2
+    assert np.sum(masks[0]) == 60
+    assert np.sum(masks[1]) == 60
+    assert np.all(data[masks[0]] == 150000)
+    assert np.all(data[masks[1]] == 1950000)
+
+
+def test_detect_signal_stops_refining_above_20_percent() -> None:
+    """Test that refinement stops once doubling would exceed a 20% threshold.
+
+    When a signal stays too wide even after the threshold has been doubled up to 20%, further
+    doubling (which would exceed 20%) is disallowed, and the still-too-wide signal is accepted
+    as-is instead of being refined indefinitely.
+    """
+    data: npt.NDArray[np.int_] = np.array(
+        [100000] * 100 + [700000] * 100 + [1300000] * 100, dtype=np.int_
+    )
+    # 300 points in 3 equal bins. Even at 20% (the threshold = 60), each bin (count 100) still
+    # passes, so the signal never splits, and doubling past 20% is disallowed.
+    masks = detect_signal(
+        data,
+        bin_size=500000,
+        init_percentage_threshold=10,
+        max_signal_width=1_000_000,
+    )
+    assert len(masks) == 1
+    assert np.sum(masks[0]) == 300
+    assert data[masks[0]].max() - data[masks[0]].min() == 1_200_000
+
+
+def test_detect_signal_discards_small_final_signals() -> None:
+    """Test that final signals under 1.5% of the data are discarded.
+
+    A tiny cluster can pass the per-bin detection threshold and be accepted as its own signal,
+    but it's still discarded at the end if it ends up representing less than 1.5% of the data.
+    """
+    data: npt.NDArray[np.int_] = np.concatenate(
+        [np.full(296, 0), np.full(4, 2_000_000)]
+    ).astype(np.int_)
+    # 300 points total: 296 (98.67%) + 4 (1.33%). Both clusters are detected (threshold = 3),
+    # but the 4-point cluster is below the 1.5% (4.5 point) final cutoff and gets dropped.
+    masks = detect_signal(data, bin_size=500000, init_percentage_threshold=1)
+    assert len(masks) == 1
+    assert np.sum(masks[0]) == 296
+
+
 def test_recursive_sigma_filter_no_outliers() -> None:
     """Test recursive_sigma_filter without outliers.
 

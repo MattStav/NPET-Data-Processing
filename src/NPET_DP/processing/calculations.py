@@ -234,7 +234,7 @@ def detect_signal(
         else:
             masks_of_horizontal_lines.append(mask)
     # Discard final signals that end up too small to be meaningful
-    min_final_threshold: float = len(data_delay) * 1.5 / 100
+    min_final_threshold: float = len(data_delay) * 0.5 / 100
     return tuple(
         mask for mask in masks_of_horizontal_lines if np.sum(mask) >= min_final_threshold
     )
