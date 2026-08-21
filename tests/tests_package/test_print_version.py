@@ -9,7 +9,10 @@ from NPET_DP.framework.constants import APP_NAME, PACKAGE_NAME
 
 
 @pytest.mark.parametrize("arg", ("-v", "--version"))
-@pytest.mark.flaky(reruns=3, reason="Version may not print correctly when there are uncommitted changes")
+@pytest.mark.flaky(
+    reruns=3,
+    reason="Version may not print correctly when there are uncommitted changes",
+)
 def test_version_prints_correctly(arg: Literal["-v", "--version"]) -> None:
     """Test version printing is correct.
 
