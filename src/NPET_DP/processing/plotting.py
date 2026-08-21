@@ -181,13 +181,13 @@ def plot_histogram(
             -((x - sc_mean) ** 2) / (2 * std_correct**2)
         )
         max_gaussian = np.max(gaussian)
-        max_counts: np.floating = np.max(counts)
+        max_counts: np.floating = np.max(total_counts)
         gaussian *= max_counts / max_gaussian
         plt.plot(
             x,
             gaussian,
             "k",
-            linewidth=1,
+            linewidth=2,
             label=f"Gaussian \n"
             f"μ={sc_mean:.3f} {get_unit('fs', sc_mean_iter)}\n"
             f"σ={sc_std:.3f} {get_unit('fs', sc_std_iter)}",
