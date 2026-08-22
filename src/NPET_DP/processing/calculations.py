@@ -347,3 +347,45 @@ def get_bin_count(data_spread: float, target_bin_size_fs: int = 10_000) -> int:
         bin_size: float = target_bin_size_fs
     bin_count: int = math.floor(data_spread / bin_size)
     return bin_count
+
+
+@validate_inputs
+def get_fwhm(data: NDArray) -> tuple[float, float]:
+    """Calculate the full-width half-maximum (FWHM) of the data.
+
+    :param data: Data to be processed, in the FW standard format.
+    :return: The place and value of the FWHM in femtoseconds.
+    """
+    bins = get_bin_count(data.max() - data.min())
+    counts, bin_edges = np.histogram(data, bins=bins)
+    bin_centers: NDArray[np.floating] = 0.5 * (bin_edges[:-1] + bin_edges[1:])
+    half_max: float = counts.max() / 2
+    above_half_max: NDArray[np.int_] = np.where(counts >= half_max)[0]
+    left_idx, right_idx = above_half_max[0], above_half_max[-1]
+    # If the peak's above-half-max region touches the outer edge, there is no
+    # neighboring bin to interpolate against, so fall back to the bin edge itself.
+    signal_min: float = (
+        float(bin_edges[0])
+        if left_idx == 0
+        else interp_crossing(
+            float(bin_centers[left_idx - 1]),
+            float(bin_centers[left_idx]),
+            float(counts[left_idx - 1]),
+            float(counts[left_idx]),
+            half_max,
+        )
+    )
+    signal_max: float = (
+        float(bin_edges[-1])
+        if right_idx == len(counts) - 1
+        else interp_crossing(
+            float(bin_centers[right_idx]),
+            float(bin_centers[right_idx + 1]),
+            float(counts[right_idx]),
+            float(counts[right_idx + 1]),
+            half_max,
+        )
+    )
+    fwhm: float = signal_max - signal_min
+    fwhm_center: float = float(bin_centers[np.argmax(counts)])
+    return fwhm_center, fwhm
