@@ -174,3 +174,19 @@ def get_unit(original_unit: _UNITS_TYPE, scale_iter: int) -> _UNITS_TYPE:
     if not 0 <= index < len(_UNITS_SCALE):
         raise ValueError(f"Out of supported range {_UNITS_SCALE}")
     return _UNITS_SCALE[index]
+
+
+def get_signal_xrange(sig_place: int, sig_width: float) -> tuple[float, float]:
+    """Get the x-range of the signal based on its place and width.
+
+    Sizes the range so the signal occupies roughly 1/3 of it, with its center
+    positioned 1/4 of the way in from the left edge.
+    :param sig_place: The place of the signal in femtoseconds.
+    :param sig_width: The width of the signal in femtoseconds.
+    :return: A tuple defining the range min and max values.
+    """
+    range_size: float = sig_width * 3
+    return (
+        sig_place - range_size / 4,
+        sig_place + range_size * 3 / 4,
+    )
