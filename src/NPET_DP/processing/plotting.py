@@ -6,7 +6,6 @@ from numpy.typing import NDArray
 from NPET_DP.framework.config import config
 from NPET_DP.framework.constants import FEMTO
 from NPET_DP.framework.path_handler import get_plot_path
-from NPET_DP.processing.calculations import interp_crossing
 from NPET_DP.processing.data_struct import NPETData
 from NPET_DP.processing.helpers import (
     auto_scale_data,
@@ -118,40 +117,11 @@ def plot_histogram(
         stacked=True,
     )
     # Mark FWHM in the figure
-    counts_arr: NDArray[np.floating] = np.asarray(counts)
-    total_counts: NDArray[np.floating] = (
-        counts_arr if counts_arr.ndim == 1 else counts_arr[-1]
-    )
-    bin_centers: NDArray[np.floating] = 0.5 * (bins[:-1] + bins[1:])
-    half_max: float = float(np.max(total_counts)) / 2
-    above: NDArray[np.bool_] = np.asarray(total_counts >= half_max)
-    indices: NDArray[np.int_] = np.where(above)[0]
-    left_idx, right_idx = indices[0], indices[-1]
-    # If the peak's above-half-max region touches the outer edge, there is no
-    # neighboring bin to interpolate against, so fall back to the bin edge itself.
-    if left_idx == 0:
-        x_left = float(bins[0])
-    else:
-        x_left = interp_crossing(
-            float(bin_centers[left_idx - 1]),
-            float(bin_centers[left_idx]),
-            float(total_counts[left_idx - 1]),
-            float(total_counts[left_idx]),
-            half_max,
-        )
-    if right_idx == len(total_counts) - 1:
-        x_right = float(bins[-1])
-    else:
-        x_right = interp_crossing(
-            float(bin_centers[right_idx]),
-            float(bin_centers[right_idx + 1]),
-            float(total_counts[right_idx]),
-            float(total_counts[right_idx + 1]),
-            half_max,
-        )
-    fwhm = x_right - x_left
-    x_range = bins[-1] - bins[0]
-    offset = x_range * 0.08  # tweak the fraction to taste
+    max_arg, fwhm = all_data.calc_fwhm()
+    half_max: float = float(counts[max_arg] / 2)
+    x_left: float = bins[max_arg] - fwhm / 2
+    x_right: float = bins[max_arg] + fwhm / 2
+    offset: float = fwhm * 0.08  # tweak the fraction to taste
     plt.annotate(
         "",
         xy=(x_left, half_max),
@@ -186,7 +156,7 @@ def plot_histogram(
             -((x - sc_mean) ** 2) / (2 * std_correct**2)
         )
         max_gaussian = np.max(gaussian)
-        max_counts: np.floating = np.max(total_counts)
+        max_counts: np.floating = np.max(np.asarray(counts)[-1])
         gaussian *= max_counts / max_gaussian
         plt.plot(
             x,
