@@ -16,9 +16,9 @@ from NPET_DP.processing.data_struct import NPETData
 from NPET_DP.processing.helpers import auto_scale_data, get_unit
 from NPET_DP.processing.plotting import plot_time_deviation
 from NPET_DP.workflows.helpers import (
-    rough_auto_range,
     drift_removal_prompt,
     histogram_plot_loop,
+    rough_auto_range,
 )
 
 

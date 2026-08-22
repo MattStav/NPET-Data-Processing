@@ -10,8 +10,6 @@ from NPET_DP.processing.calculations import (
     calculate_delay,
     detect_signal,
     discard_rows_until_first_col_match,
-    get_bin_count,
-    interp_crossing,
     is_continuous,
     process_overflow,
     recursive_sigma_filter,
