@@ -45,7 +45,7 @@ def rough_auto_range(delays: NPETData, signal: NDArray[np.bool_]) -> None:
     typer.echo("\nAuto-ranging to focus roughly on the detected signal")
     signal_delays = delays.filter_range(signal)
     sig_place, sig_width = signal_delays.calc_fwhm()
-    signal_range = get_signal_xrange(sig_place, sig_width * 2)
+    signal_range = get_signal_xrange(sig_place, sig_width * 3)
     config.assign_delays(min_del=signal_range[0], max_del=signal_range[1])
 
 
@@ -56,7 +56,7 @@ def precise_auto_range(sig_place_fs: int, sig_width_fs: int) -> None:
     :param sig_width_fs: The width of the signal in femtoseconds.
     """
     typer.echo("\nAuto-ranging to focus precisely on the calculated signal")
-    signal_range = get_signal_xrange(sig_place_fs, sig_width_fs)
+    signal_range = get_signal_xrange(sig_place_fs, sig_width_fs * 4)
     config.assign_delays(min_del=signal_range[0], max_del=signal_range[1])
 
 
@@ -98,11 +98,12 @@ def histogram_plot_loop(data: NPETData, name: str) -> NPETData:
         # Plot the histogram of the filtered data
         typer.echo("\nPlotting histogram of the measured delays")
         data_spread: float = selection.femto.max() - selection.femto.min()
-        bin_count = get_bin_count(data_spread, 6000)
+        bin_count = get_bin_count(data_spread, 10_000)
         typer.echo(f"Histogram bin count = {bin_count}")
         precise_auto_range(round(sigma_data.mean), round(sigma_data.std))
+        precise_selection = select_data_within_range(data)
         plot_histogram(
-            all_data=selection,
+            all_data=precise_selection,
             signal_data=sigma_data if sigma_i != 1 else NPETData.empty(),
             name=name,
             bin_count=bin_count,
