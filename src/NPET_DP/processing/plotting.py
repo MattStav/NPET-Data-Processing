@@ -118,10 +118,20 @@ def plot_histogram(
     )
     # Mark FWHM in the figure
     max_arg, fwhm = all_data.calc_fwhm()
-    half_max: float = float(counts[max_arg] / 2)
-    x_left: float = bins[max_arg] - fwhm / 2
-    x_right: float = bins[max_arg] + fwhm / 2
-    offset: float = fwhm * 0.08  # tweak the fraction to taste
+    # Scale to the same units as the (already scaled) plot axis
+    sc_max_arg: float = scale_num(max_arg, sc_iter)
+    sc_fwhm: float = scale_num(fwhm, sc_iter)
+    peak_bin: int = int(
+        np.clip(
+            np.searchsorted(bins, sc_max_arg, side="right") - 1,
+            0,
+            len(bins) - 2,
+        )
+    )
+    half_max: float = float(np.asarray(counts)[-1][peak_bin] / 2)
+    x_left: float = sc_max_arg - sc_fwhm / 2
+    x_right: float = sc_max_arg + sc_fwhm / 2
+    offset: float = sc_fwhm * 0.08  # tweak the fraction to taste
     plt.annotate(
         "",
         xy=(x_left, half_max),
