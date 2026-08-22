@@ -350,14 +350,15 @@ def get_bin_count(data_spread: float, target_bin_size_fs: int = 10_000) -> int:
 
 
 @validate_inputs
-def get_fwhm(data: NDArray) -> tuple[float, float]:
+def calc_fwhm(data: NDArray) -> tuple[float, float]:
     """Calculate the full-width half-maximum (FWHM) of the data.
 
     :param data: Data to be processed, in the FW standard format.
     :return: The place and value of the FWHM in femtoseconds.
     """
-    bins = get_bin_count(data.max() - data.min())
-    counts, bin_edges = np.histogram(data, bins=bins)
+    femto = data["femto"]
+    bins = get_bin_count(femto.max() - femto.min())
+    counts, bin_edges = np.histogram(femto, bins=bins)
     bin_centers: NDArray[np.floating] = 0.5 * (bin_edges[:-1] + bin_edges[1:])
     half_max: float = counts.max() / 2
     above_half_max: NDArray[np.int_] = np.where(counts >= half_max)[0]

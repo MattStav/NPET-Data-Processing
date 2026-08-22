@@ -4,6 +4,7 @@ import pytest
 from numpy.typing import NDArray
 
 from NPET_DP.processing.calculations import (
+    calc_fwhm,
     calculate_delay,
     detect_signal,
     discard_rows_until_first_col_match,
@@ -408,6 +409,48 @@ def test_detect_signal_discards_small_final_signals() -> None:
     masks = detect_signal(data, bin_size=500000, init_thresh=1)
     assert len(masks) == 1
     assert np.sum(masks[0]) == 296
+
+
+def test_get_fwhm_single_peak() -> None:
+    """Test get_fwhm on a clear, roughly symmetric peak.
+
+    Verifies that the returned center lands on the highest-density bin and the width
+    matches the interpolated half-max crossing points.
+    """
+    values = (
+        [0, 10000, 20000, 30000]
+        + [45000] * 50
+        + [50000, 60000, 70000, 80000, 90000]
+    )
+    data = _structured_data(values)
+    fwhm_center, fwhm = calc_fwhm(data)
+    assert fwhm_center == 45000
+    assert np.isclose(fwhm, 10204.0816, atol=0.01)
+
+
+def test_get_fwhm_center_uses_highest_bin_not_crossing_midpoint() -> None:
+    """Test that the FWHM center is the mode bin, not the midpoint of the crossings.
+
+    With asymmetric neighbor densities around the peak, the midpoint of the two half-max
+    crossing points would land off the peak bin; the center of the highest bin should not.
+    """
+    values = (
+        [0, 10000, 20000, 30000]
+        + [45000] * 50
+        + [55000] * 20
+        + [60000, 70000, 80000, 90000]
+    )
+    data = _structured_data(values)
+    fwhm_center, fwhm = calc_fwhm(data)
+    assert fwhm_center == 45000
+    assert np.isclose(fwhm, 13435.3741, atol=0.01)
+
+
+def test_get_fwhm_invalid_shape_raises() -> None:
+    """A non-structured array should raise a ValueError."""
+    data = np.arange(10, dtype=np.int64)
+    with pytest.raises(ValueError):
+        calc_fwhm(data)
 
 
 def test_recursive_sigma_filter_no_outliers() -> None:
