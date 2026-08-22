@@ -16,11 +16,11 @@ from NPET_DP.processing.helpers import DATA_TYPE
 
 
 def _structured_data(values: list[int]) -> npt.NDArray:
-    """Rebuild list of values into array structure as is expected by the program.
+    """Rebuild the list of values into an array structure as is expected by the program.
 
     Build a DATA_TYPE structured array with the given values.
-    :param values: list of values
-    :return: Structured array
+    :param values: List of values.
+    :return: Structured array.
     """
     return np.array(list(zip(range(len(values)), values, strict=True)), dtype=DATA_TYPE)
 
@@ -31,7 +31,7 @@ def test_process_overflow() -> None:
     Test that the function correctly processes overflows in the data.
     Overflow happens when femtosecond data goes above one second,
     which results in the second values incremented unexpectedly.
-    Without processing overflow it would be very difficult to compare femtosecond values,
+    Without processing overflow, it would be very challenging to compare femtosecond values,
     that near the one-second boundary.
     """
     data = np.array(
@@ -168,10 +168,10 @@ def test_discard_rows_until_first_col_match_returns_full_tail_from_match_point()
 
 
 def test_discard_rows_until_first_col_match_raises_index_error_when_no_match() -> None:
-    """Raise error when no match is found.
+    """Raise an error when no match is found.
 
     The function should raise IndexError if the input data never reaches the reference value,
-    i.e., there are no matching data in the first collumns of the data sets.
+    i.e., there is no matching data in the first columns of the data sets.
     """
     ref_data = np.array([(10, 0)], dtype=DATA_TYPE)
     mismatch_data = np.array([(1, 10), (2, 20), (3, 30)], dtype=DATA_TYPE)
@@ -224,7 +224,7 @@ def test_calculate_delay_missing_and_out_of_range() -> None:
     """Delay calculation can skip missing points.
 
     Test calculate_delay with missing points and out-of-range delays.
-    The calculation simply skips missing (non-matching) values,
+    The calculation simply skips missing (non-matching) values
     and calculates the delays of the remaining points.
     """
     data_start = np.array(
@@ -264,12 +264,12 @@ def test_calculate_delay_missing_and_out_of_range() -> None:
 
 
 def test_detect_signal_single_cluster() -> None:
-    """Signal detection on single cluster.
+    """Signal detection on a single cluster.
 
     Test detect_signal can detect a single clear cluster of delays.
     The function should detect a higher concentration of delays as a valid signal.
     """
-    # 100 points, 20 at 1000, 80 at 500000
+    # 100 points, 20 at 1000, 80 at 500_000
     data: npt.NDArray[np.int_] = np.array([1000] * 20 + [500000] * 80, dtype=np.int_)
     # Any bin with >= 1 point will be selected if we use percentage_threshold=0.15
     masks = detect_signal(data, bin_size=40000, init_percentage_threshold=0.15)
@@ -310,7 +310,7 @@ def test_detect_signal_multiple_clusters() -> None:
 def test_detect_signal_consecutive_bins() -> None:
     """Test that consecutive high-density bins are grouped together.
 
-    The signal detection cluster together two (or more) detected signal if they are neighbors,
+    The signal detection clusters together two (or more) detected signals if they are neighbors,
     interpreting them instead as a single signal.
     """
     data: npt.NDArray[np.int_] = np.array([5000] * 10 + [15000] * 10, dtype=np.int_)
@@ -323,10 +323,10 @@ def test_detect_signal_consecutive_bins() -> None:
 def test_detect_signal_overlapping_clusters() -> None:
     """Test that consecutive high-density bins are grouped together.
 
-    Close but NOT directly neighboring signal are NOT grouped together.
+    Close but NOT directly neighboring signals are NOT grouped together.
     """
-    # bin_size = 10000.
-    # Bins: [0, 10000), [10000, 20000), [20000, 30000)
+    # bin_size = 10_000.
+    # Bins: [0, 10_000), [10_000, 20_000), [20_000, 30_000)
     data: npt.NDArray[np.int_] = np.array([4000] * 10 + [25000] * 10, dtype=np.int_)
     # threshold = 20 * 0.05 / 100 = 0.01.
     # Bins 0 and 2 are selected. Bin 1 is NOT.
@@ -403,8 +403,8 @@ def test_detect_signal_discards_small_final_signals() -> None:
     data: npt.NDArray[np.int_] = np.concatenate(
         [np.full(296, 0), np.full(4, 2_000_000)]
     ).astype(np.int_)
-    # 300 points total: 296 (98.67%) + 4 (1.33%). Both clusters are detected (threshold = 3),
-    # but the 4-point cluster is below the 1.5% (4.5 point) final cutoff and gets dropped.
+    # 300 points total: 296 (98.67%) + 4 (1.33%). Both clusters are detected (the threshold = 3),
+    # but the 4-point cluster is below the 0.5% (4.5 point) final cut-off and gets dropped.
     masks = detect_signal(data, bin_size=500000, init_percentage_threshold=1)
     assert len(masks) == 1
     assert np.sum(masks[0]) == 296
@@ -416,7 +416,7 @@ def test_recursive_sigma_filter_no_outliers() -> None:
     The filter selects all the data when all data is within the sigma range.
     """
     data: npt.NDArray = _structured_data([100, 101, 99, 100, 100])
-    # mean=100, std ~0.63. With sigma=2.2, range is ~[98.6, 101.4]. All are in.
+    # mean=100, std ~0.63. With sigma=2.2, the range is ~[98.6, 101.4]. All are in.
     filtered, iterations = recursive_sigma_filter(data, sigma_mult=2.2)
     assert np.array_equal(filtered, data)
     assert iterations == 1
@@ -432,7 +432,7 @@ def test_recursive_sigma_filter_with_outliers() -> None:
     data: npt.NDArray = _structured_data([100, 101, 99, 100, 100, 1000])
     # First pass: mean=250, std ~335. Range [250 - 2.2*335, 250 + 2.2*335] -> [-487, 987]
     # 1000 is filtered out.
-    # Second pass: [100, 101, 99, 100, 100], mean=100, std=0.63. Range [98.6, 101.4]. All in.
+    # Second pass: [100, 101, 99, 100, 100], mean=100, std=0.63. Range [98.6, 101.4]. All are in.
     # Converged.
     filtered, iterations = recursive_sigma_filter(data, sigma_mult=2.2)
     assert np.array_equal(filtered, data[:5])
@@ -440,7 +440,7 @@ def test_recursive_sigma_filter_with_outliers() -> None:
 
 
 def test_recursive_sigma_filter_max_iter() -> None:
-    """Test filter raises on max_iter reached.
+    """Test filter raises an error on max_iter reached.
 
     Test that recursive_sigma_filter raises RuntimeError when max_iter is reached.
     The iterations need to be limited, otherwise the while loop could run forever.
@@ -457,10 +457,10 @@ def test_recursive_sigma_filter_max_iter() -> None:
 
 
 def test_recursive_sigma_filter_large_dataset() -> None:
-    """Test recursive_sigma_filter with a large dataset (e.g., 100,000 points)."""
-    # Create 100,000 points from a normal distribution + 1000 outliers
+    """Test recursive_sigma_filter with a large dataset (e.g., 100_000 points)."""
+    # Create 100_000 points from a normal distribution + 1000 outliers
     np.random.seed(42)
-    clean_data = np.random.normal(loc=1000, scale=10, size=100000).astype(np.int64)
+    clean_data = np.random.normal(loc=1000, scale=10, size=100_000).astype(np.int64)
     outliers = np.random.uniform(low=2000, high=3000, size=1000).astype(np.int64)
     values = np.concatenate([clean_data, outliers])
     np.random.shuffle(values)
