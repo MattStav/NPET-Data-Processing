@@ -1,3 +1,5 @@
+import math
+
 import numpy as np
 from numpy.typing import NDArray
 
@@ -299,3 +301,41 @@ def remove_drift(data: NDArray, deg: int = 1) -> NDArray:
     new_data["femto"] = np.round(residual)
     check_data_structure(new_data)
     return new_data
+
+
+def interp_crossing(
+    x1: float,
+    x2: float,
+    y1: float,
+    y2: float,
+    y_target: float,
+) -> float:
+    """Linearly interpolate the x-value where the line through (x1, y1)-(x2, y2) crosses y_target.
+
+    :param x1: X-coordinate of the first point.
+    :param x2: X-coordinate of the second point.
+    :param y1: Y-coordinate of the first point.
+    :param y2: Y-coordinate of the second point.
+    :param y_target: Y-value to find the crossing x-value for.
+    :return: X-value at which the line reaches y_target.
+    """
+    return x1 + (y_target - y1) * (x2 - x1) / (y2 - y1)
+
+
+def get_bin_count(data_spread: float, target_bin_size_fs: int = 10_000) -> int:
+    """Calculate the bin count based on the data length.
+
+    Calculate the number of bins for a histogram based on the data length and target bin size.
+    :param data_spread: Length of the data to calculate the bin count for.
+    :param target_bin_size_fs: Target bin size in femtoseconds.
+    :return: Number of bins for the histogram.
+    """
+    # Difference between the max and min delay
+    if data_spread > 50_000_000:  # fs
+        # If there's too much data (>50 ns), then adjust the bin size to match 1000 bins
+        bin_size: float = data_spread / 1000
+    else:
+        # Otherwise, use the supplied bin size in femtoseconds
+        bin_size: float = target_bin_size_fs
+    bin_count: int = math.floor(data_spread / bin_size)
+    return bin_count

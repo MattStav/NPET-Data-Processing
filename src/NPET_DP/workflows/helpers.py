@@ -65,28 +65,6 @@ def select_data_within_range(data: NPETData) -> NPETData:
     return data.filter_range(mask)
 
 
-def get_bin_count(data: NPETData, target_bin_size_fs: int = 10_000) -> int:
-    """Calculate the bin count based on the data.
-
-    Calculate the number of bins for a histogram based on the data and target bin size.
-    :param data: Data to calculate the bin count for.
-    :param target_bin_size_fs: Target bin size in femtoseconds.
-    :return: Number of bins for the histogram.
-    """
-    # Difference between the max and min delay
-    delay_spread: float = data.femto.max() - data.femto.min()
-    if delay_spread > 50_000_000:  # fs
-        # If there's too much data (>50 ns), then adjust the bin size to match 1000 bins
-        bin_size: float = delay_spread / 1000
-    else:
-        # Otherwise, use the supplied bin size in femtoseconds
-        bin_size: float = target_bin_size_fs
-    typer.echo(f"Histogram bin size = {bin_size:.2f} fs")
-    bin_count: int = math.floor(delay_spread / bin_size)
-    typer.echo(f"Histogram bin count = {bin_count}")
-    return bin_count
-
-
 def histogram_plot_loop(data: NPETData, name: str) -> NPETData:
     """Loop to continuously filter and plot the histogram of the data.
 

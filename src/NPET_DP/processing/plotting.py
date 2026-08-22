@@ -77,25 +77,6 @@ def plot_time_deviation(data: NPETData, frequency: int, name: str) -> None:
     plt.show(block=False)
 
 
-def __interp_crossing(
-    x1: float,
-    x2: float,
-    y1: float,
-    y2: float,
-    y_target: float,
-) -> float:
-    """Linearly interpolate the x-value where the line through (x1, y1)-(x2, y2) crosses y_target.
-
-    :param x1: X-coordinate of the first point.
-    :param x2: X-coordinate of the second point.
-    :param y1: Y-coordinate of the first point.
-    :param y2: Y-coordinate of the second point.
-    :param y_target: Y-value to find the crossing x-value for.
-    :return: X-value at which the line reaches y_target.
-    """
-    return x1 + (y_target - y1) * (x2 - x1) / (y2 - y1)
-
-
 def plot_histogram(
     *,
     all_data: NPETData,
@@ -150,7 +131,7 @@ def plot_histogram(
     if left_idx == 0:
         x_left = float(bins[0])
     else:
-        x_left = __interp_crossing(
+        x_left = interp_crossing(
             float(bin_centers[left_idx - 1]),
             float(bin_centers[left_idx]),
             float(total_counts[left_idx - 1]),
@@ -160,7 +141,7 @@ def plot_histogram(
     if right_idx == len(total_counts) - 1:
         x_right = float(bins[-1])
     else:
-        x_right = __interp_crossing(
+        x_right = interp_crossing(
             float(bin_centers[right_idx]),
             float(bin_centers[right_idx + 1]),
             float(total_counts[right_idx]),
