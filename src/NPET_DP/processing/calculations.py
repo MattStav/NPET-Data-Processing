@@ -332,10 +332,10 @@ def interp_crossing(
 
 
 def get_bin_count(data_spread: float, target_bin_size_fs: int = 10_000) -> int:
-    """Calculate the bin count based on the data length.
+    """Calculate the bin count.
 
-    Calculate the number of bins for a histogram based on the data length and target bin size.
-    :param data_spread: Length of the data to calculate the bin count for.
+    Calculate the number of bins for a histogram based on the data spread and target bin size.
+    :param data_spread: The values spread across the data.
     :param target_bin_size_fs: Target bin size in femtoseconds.
     :return: Number of bins for the histogram.
     """
