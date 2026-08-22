@@ -60,11 +60,21 @@ class NPETData(BaseModel):
         return scaled, get_unit("fs", sc_iter)
 
     @property
+    def mean(self) -> float:
+        """Mean of the femtosecond delay values and its units."""
+        return float(np.mean(self.femto))
+
+    @property
     def sc_mean(self) -> tuple[float, _UNITS_TYPE]:
         """Mean of the femtosecond delay values and its units."""
         mean_value = np.mean(self.femto)
         scaled_mean, sc_iter = auto_scale_num(mean_value)
         return float(scaled_mean), get_unit("fs", sc_iter)
+
+    @property
+    def std(self) -> float:
+        """Standard deviation of the femtosecond delay values and its units."""
+        return float(np.std(self.femto))
 
     @property
     def sc_std(self) -> tuple[float, _UNITS_TYPE]:
