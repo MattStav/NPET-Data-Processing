@@ -1,5 +1,4 @@
 import numpy as np
-from numpy.lib.recfunctions import unstructured_to_structured
 from numpy.typing import NDArray
 
 from NPET_DP.framework.constants import FEMTO
@@ -97,34 +96,38 @@ def calculate_delay(
     :return: Calculated delays in femtoseconds.
     """
     searched_interval_size: float = FEMTO / (2 * frequency)
-    # pre-allocated array for the calculated delays
-    diff_max_len: int = max(len(data_start), len(data_stop))
-    diff_mat: NDArray = np.ones((diff_max_len, 2), dtype=np.int64)
-    diff_mat = unstructured_to_structured(diff_mat, dtype=np.dtype(DATA_TYPE))
-    index: int = 0
-    for epoch_start in data_start:
-        for i, epoch_stop in enumerate(data_stop):
-            # If no match was found in one measurement interval plus some margin,
-            # break and proceed to the next start epoch. The current start epoch is discarded.
-            if i == frequency * 2 + 10:
-                break
+    max_stop_scan: int = frequency * 2 + 10
+    half_femto: float = FEMTO / 2
+
+    # Field access on a numpy structured scalar (epoch_start["seconds"]) is much
+    # slower than plain int indexing, and this loop is O(N * frequency) in the
+    # worst case, so work on plain Python lists/ints instead.
+    start_seconds: list[int] = data_start["seconds"].tolist()
+    start_femto: list[int] = data_start["femto"].tolist()
+    stop_seconds: list[int] = data_stop["seconds"].tolist()
+    stop_femto: list[int] = data_stop["femto"].tolist()
+    n_stop: int = len(stop_seconds)
+
+    results: list[tuple[int, int]] = []
+    stop_idx: int = 0
+    for s_sec, s_femto in zip(start_seconds, start_femto, strict=True):
+        # If no match was found in one measurement interval plus some margin,
+        # proceed to the next start epoch. The current start epoch is discarded.
+        limit: int = min(stop_idx + max_stop_scan, n_stop)
+        for i in range(stop_idx, limit):
+            e_sec = stop_seconds[i]
+            e_femto = stop_femto[i]
             # Case when the measurements happened on the same second
-            if epoch_stop["seconds"] == epoch_start["seconds"]:
-                diff: int = epoch_stop["femto"] - epoch_start["femto"]
-                diff_abs: int = np.abs(diff)
+            if e_sec == s_sec:
+                diff: int = e_femto - s_femto
+                diff_abs: int = abs(diff)
             # Case when measurements happened on a different second, but they fulfill conditions for potential cross
-            elif all(c > s for c, s in zip(epoch_stop, epoch_start, strict=False)) and (
-                epoch_stop["femto"] > FEMTO / 2 or epoch_start["femto"] > FEMTO / 2
+            elif e_sec > s_sec and e_femto > s_femto and (
+                e_femto > half_femto or s_femto > half_femto
             ):
-                diff_abs = int(
-                    FEMTO - np.abs(epoch_stop["femto"] - epoch_start["femto"])
-                )
+                diff_abs = FEMTO - abs(e_femto - s_femto)
                 # Choose the sign of the difference based on which epoch is earlier
-                diff: int = (
-                    -diff_abs
-                    if epoch_stop["seconds"] < epoch_start["seconds"]
-                    else diff_abs
-                )
+                diff = -diff_abs if e_sec < s_sec else diff_abs
             # Case when there is no chance of matching the epochs
             else:
                 continue
@@ -132,15 +135,15 @@ def calculate_delay(
             # skip this combination and proceed to the next stop epoch
             if diff_abs > searched_interval_size:
                 continue
-            diff_mat[index] = (epoch_start["seconds"], diff)
-            index += 1
-            # Don't process the same epochs again, slice only the data after the current epoch.
+            results.append((s_sec, diff))
+            # Don't process the same epochs again, only consider the data after the current epoch.
             # The measurements can't travel back in time :)
-            data_stop = data_stop[i + 1 :]
+            stop_idx = i + 1
             # Break to proceed to the next measurement set
             break
+    diff_mat: NDArray = np.array(results, dtype=DATA_TYPE)
     check_data_structure(diff_mat)
-    return diff_mat[:index]  # Trim the array to the actual size
+    return diff_mat
 
 
 def detect_signal(
