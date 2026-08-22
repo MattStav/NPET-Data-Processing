@@ -1,11 +1,10 @@
-import math
-
 import numpy as np
 import typer
 from click import Choice
 from numpy.typing import NDArray
 
 from NPET_DP.framework.config import config
+from NPET_DP.processing.calculations import get_bin_count
 from NPET_DP.processing.data_struct import NPETData
 from NPET_DP.processing.helpers import auto_scale_num, get_unit
 from NPET_DP.processing.plotting import plot_histogram
@@ -90,7 +89,9 @@ def histogram_plot_loop(data: NPETData, name: str) -> NPETData:
         typer.secho(f"Return rate: {ret_rate:.2%}", fg=typer.colors.CYAN)
         # Plot the histogram of the filtered data
         typer.echo("\nPlotting histogram of the measured delays")
-        bin_count = get_bin_count(selection)
+        data_spread: float = selection.femto.max() - selection.femto.min()
+        bin_count = get_bin_count(data_spread)
+        typer.echo(f"Histogram bin count = {bin_count}")
         plot_histogram(
             all_data=selection,
             signal_data=sigma_data if sigma_i != 1 else NPETData.empty(),
