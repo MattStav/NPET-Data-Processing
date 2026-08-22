@@ -30,7 +30,7 @@ class _Data(NamedTuple):
 def __match_data(*, data_start: NPETData, data_stop: NPETData) -> _Data:
     """Discard non-matching data.
 
-    Discards data that was taken before the second (either start or stop) source begun measurement,
+    Discards data taken before the second (either start or stop) source begun measurement,
     until the data begins at the same second.
     :param data_start: Data from the start source, as NPETData object.
     :param data_stop: Data from the stop source, as NPETData object.
