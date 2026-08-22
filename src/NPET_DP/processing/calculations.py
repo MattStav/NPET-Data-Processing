@@ -350,7 +350,7 @@ def get_bin_count(data_spread: float, target_bin_size_fs: int = 10_000) -> int:
 
 
 @validate_inputs
-def calc_fwhm(data: NDArray) -> tuple[float, float]:
+def calc_fwhm(data: NDArray) -> tuple[int, float]:
     """Calculate the full-width half-maximum (FWHM) of the data.
 
     :param data: Data to be processed, in the FW standard format.
@@ -388,5 +388,5 @@ def calc_fwhm(data: NDArray) -> tuple[float, float]:
         )
     )
     fwhm: float = signal_max - signal_min
-    fwhm_center: float = float(bin_centers[np.argmax(counts)])
+    fwhm_center: int = round(bin_centers[np.argmax(counts)])
     return fwhm_center, fwhm

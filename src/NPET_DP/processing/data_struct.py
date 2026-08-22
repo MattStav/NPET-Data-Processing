@@ -6,6 +6,7 @@ from numpy.typing import NDArray
 from pydantic import BaseModel, ConfigDict, model_validator
 
 from NPET_DP.processing.calculations import (
+    calc_fwhm,
     calculate_delay,
     detect_signal,
     discard_rows_until_first_col_match,
@@ -166,54 +167,12 @@ class NPETData(BaseModel):
         """
         return detect_signal(self.femto)
 
-    def define_signal_range(
-        self,
-        signal_mask: NDArray[np.bool_],
-    ) -> tuple[float, float]:
-        """Calculate a range of data around the detected signal.
+    def calc_fwhm(self) -> tuple[int, float]:
+        """Calculate the full-width half-maximum (FWHM) of the data.
 
-        The mask only bounds the coarse area containing the signal, so its precise extent is
-        first resolved via the FWHM of a fine histogram of the masked data.
-        :param signal_mask: Boolean mask indicating the detected signal
-        :return: A tuple defining the range min and max values.
+        :return: The place and value of the FWHM in femtoseconds.
         """
-        signal_values: NDArray[np.int_] = self.femto[signal_mask]
-        bins = get_bin_count(signal_values.max() - signal_values.min())
-        counts, bin_edges = np.histogram(signal_values, bins=bins)
-        bin_centers: NDArray[np.floating] = 0.5 * (bin_edges[:-1] + bin_edges[1:])
-        half_max: float = counts.max() / 2
-        above_half_max: NDArray[np.int_] = np.where(counts >= half_max)[0]
-        left_idx, right_idx = above_half_max[0], above_half_max[-1]
-        # If the peak's above-half-max region touches the outer edge, there is no
-        # neighboring bin to interpolate against, so fall back to the bin edge itself.
-        signal_min: float = (
-            float(bin_edges[0])
-            if left_idx == 0
-            else interp_crossing(
-                float(bin_centers[left_idx - 1]),
-                float(bin_centers[left_idx]),
-                float(counts[left_idx - 1]),
-                float(counts[left_idx]),
-                half_max,
-            )
-        )
-        signal_max: float = (
-            float(bin_edges[-1])
-            if right_idx == len(counts) - 1
-            else interp_crossing(
-                float(bin_centers[right_idx]),
-                float(bin_centers[right_idx + 1]),
-                float(counts[right_idx]),
-                float(counts[right_idx + 1]),
-                half_max,
-            )
-        )
-        range_center: float = (signal_max + signal_min) / 2
-        new_range_size: float = (signal_max - signal_min) * 30
-        return (
-            range_center - new_range_size / 4,
-            range_center + new_range_size * 3 / 4,
-        )
+        return calc_fwhm(self.structured_arr)
 
     def filter_range(self, filter_mask: NDArray[np.bool_]) -> "NPETData":
         """Filter the data based on the given mask.
