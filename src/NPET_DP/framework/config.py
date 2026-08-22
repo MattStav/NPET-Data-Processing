@@ -4,6 +4,8 @@ from typing import Literal
 import typer
 from pydantic import BaseModel, ConfigDict, PrivateAttr
 
+from NPET_DP.processing.helpers import auto_scale_num, get_unit
+
 
 class __AppConfig(BaseModel):
     model_config = ConfigDict(validate_assignment=True)
@@ -168,6 +170,20 @@ class __AppConfig(BaseModel):
                 setattr(self, f"_{delay_type}_delay", new_val * mult)
                 break
             typer.secho("Invalid delay value!", fg=typer.colors.RED)
+
+    def assign_delays(self, *, min_del: float, max_del: float) -> None:
+        """Assign the min and max delay values to the config.
+
+        :param min_del: Minimum delay value in ns
+        :param max_del: Maximum delay value in ns
+        """
+        self.min_delay = min_del
+        self.max_delay = max_del
+        r_min, n_min = auto_scale_num(self.min_delay)
+        r_max, n_max = auto_scale_num(self.max_delay)
+        u_min = get_unit("fs", n_min)
+        u_max = get_unit("fs", n_max)
+        typer.echo(f"Range set to min: {r_min:.4f} {u_min}, max: {r_max:.4f} {u_max}")
 
 
 config: __AppConfig = __AppConfig()

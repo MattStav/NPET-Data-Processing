@@ -6,7 +6,7 @@ from numpy.typing import NDArray
 from NPET_DP.framework.config import config
 from NPET_DP.processing.calculations import get_bin_count
 from NPET_DP.processing.data_struct import NPETData
-from NPET_DP.processing.helpers import auto_scale_num, get_signal_xrange, get_unit
+from NPET_DP.processing.helpers import get_signal_xrange
 from NPET_DP.processing.plotting import plot_histogram
 
 
@@ -46,13 +46,18 @@ def rough_auto_range(delays: NPETData, signal: NDArray[np.bool_]) -> None:
     signal_delays = delays.filter_range(signal)
     sig_place, sig_width = signal_delays.calc_fwhm()
     signal_range = get_signal_xrange(sig_place, sig_width * 2)
-    config.min_delay = signal_range[0]
-    config.max_delay = signal_range[1]
-    r_min, n_min = auto_scale_num(config.min_delay)
-    r_max, n_max = auto_scale_num(config.max_delay)
-    u_min = get_unit("fs", n_min)
-    u_max = get_unit("fs", n_max)
-    typer.echo(f"Range set to min: {r_min:.4f} {u_min}, max: {r_max:.4f} {u_max}")
+    config.assign_delays(min_del=signal_range[0], max_del=signal_range[1])
+
+
+def precise_auto_range(sig_place_fs: int, sig_width_fs: int) -> None:
+    """Auto range the x-axis based on the precise location and width of the signal.
+
+    :param sig_place_fs: The place of the signal in femtoseconds.
+    :param sig_width_fs: The width of the signal in femtoseconds.
+    """
+    typer.echo("\nAuto-ranging to focus precisely on the calculated signal")
+    signal_range = get_signal_xrange(sig_place_fs, sig_width_fs)
+    config.assign_delays(min_del=signal_range[0], max_del=signal_range[1])
 
 
 def select_data_within_range(data: NPETData) -> NPETData:
