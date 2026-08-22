@@ -8,7 +8,7 @@ from _pytest.monkeypatch import MonkeyPatch
 from NPET_DP.framework.config import config
 from NPET_DP.processing.data_struct import NPETData
 from NPET_DP.workflows.helpers import (
-    auto_range,
+    rough_auto_range,
     get_bin_count,
     select_data_within_range,
 )
@@ -45,7 +45,7 @@ def test_auto_range() -> None:
         femto=np.array([100, 200, 300, 400, 500]),
     )
     mask = np.array([False, True, True, True, False])
-    auto_range(delays, mask)
+    rough_auto_range(delays, mask)
     assert config.min_delay == -340.0
     assert config.max_delay == 1260.0
 

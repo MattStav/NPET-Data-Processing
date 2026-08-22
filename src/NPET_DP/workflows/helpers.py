@@ -34,15 +34,18 @@ def drift_removal_prompt(data: NPETData) -> tuple[NPETData, int]:
     return data.compensate_drift(pol_deg), pol_deg
 
 
-def auto_range(delays: NPETData, signal: NDArray[np.bool_]) -> None:
+def rough_auto_range(delays: NPETData, signal: NDArray[np.bool_]) -> None:
     """Auto range the x-axis based on the data.
 
+    This ranging is pretty quick, but not very accurate.
     Automatically set the x-axis range of the histogram to focus on the detected signal.
     :param delays: Data to be filtered as NPETData object.
     :param signal: Boolean mask indicating the detected signal.
     """
-    typer.echo("\nAuto-ranging the histogram plot to focus on the detected signal")
-    signal_range = delays.define_signal_range(signal)
+    typer.echo("\nAuto-ranging to focus roughly on the detected signal")
+    signal_delays = delays.filter_range(signal)
+    sig_place, sig_width = signal_delays.calc_fwhm()
+    signal_range = get_signal_xrange(sig_place, sig_width * 2)
     config.min_delay = signal_range[0]
     config.max_delay = signal_range[1]
     r_min, n_min = auto_scale_num(config.min_delay)
@@ -119,6 +122,6 @@ def histogram_plot_loop(data: NPETData, name: str) -> NPETData:
         if len(autodetection) != 1:
             typer.secho("Failed to autodetect a single signal!", fg=typer.colors.RED)
             continue
-        auto_range(selection, autodetection[0])
+        rough_auto_range(selection, autodetection[0])
 
     return sigma_data

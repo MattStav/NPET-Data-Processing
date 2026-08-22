@@ -16,7 +16,7 @@ from NPET_DP.processing.data_struct import NPETData
 from NPET_DP.processing.helpers import auto_scale_data, get_unit
 from NPET_DP.processing.plotting import plot_time_deviation
 from NPET_DP.workflows.helpers import (
-    auto_range,
+    rough_auto_range,
     drift_removal_prompt,
     histogram_plot_loop,
 )
@@ -164,7 +164,7 @@ def main_two_epochs() -> None:
             return
     elif len(autodetection) == 1:
         typer.secho("Autodetect found a single return signal!", fg=col.GREEN)
-        auto_range(delays, autodetection[0])
+        rough_auto_range(delays, autodetection[0])
     elif len(autodetection) > 1:
         typer.secho(f"Autodetect found {len(autodetection)} signals!", fg=col.YELLOW)
     __plot_all_scatter(delays, autodetection)

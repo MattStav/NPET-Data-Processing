@@ -65,7 +65,7 @@ def test_histogram_plot_loop_manual_rescale_loops_again(
     assert mock_plot_histogram.call_count == 2
 
 
-@patch("NPET_DP.workflows.helpers.auto_range")
+@patch("NPET_DP.workflows.helpers.rough_auto_range")
 @patch("NPET_DP.workflows.helpers.plot_histogram")
 @patch("NPET_DP.workflows.helpers.config")
 @patch("typer.prompt")
@@ -93,7 +93,7 @@ def test_histogram_plot_loop_auto_rescale_with_single_signal_calls_auto_range(
     assert mock_plot_histogram.call_count == 2
 
 
-@patch("NPET_DP.workflows.helpers.auto_range")
+@patch("NPET_DP.workflows.helpers.rough_auto_range")
 @patch("NPET_DP.workflows.helpers.plot_histogram")
 @patch("NPET_DP.workflows.helpers.config")
 @patch("typer.prompt")

@@ -10,7 +10,7 @@ from NPET_DP.framework.constants import FEMTO
 from NPET_DP.framework.file_selection import user_file_select
 from NPET_DP.framework.path_handler import get_plot_path
 from NPET_DP.processing.data_struct import NPETData
-from NPET_DP.workflows.helpers import auto_range, histogram_plot_loop
+from NPET_DP.workflows.helpers import rough_auto_range, histogram_plot_loop
 
 
 def __plot_singular_data(data: NPETData, name: str) -> None:
@@ -49,7 +49,7 @@ def main_one_epoch() -> None:
     autodetection: tuple[NDArray[np.bool_], ...] = mod_data.detect_signal()
     if len(autodetection) == 1:
         typer.echo("Autodetection found a single signal")
-        auto_range(mod_data, autodetection[0])
+        rough_auto_range(mod_data, autodetection[0])
     else:
         typer.echo("Unable to autodetect a single signal")
     if len(autodetection) != 1 and not typer.confirm("Do you want to plot histogram?"):
