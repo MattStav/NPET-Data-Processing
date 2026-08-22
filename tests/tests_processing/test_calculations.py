@@ -395,16 +395,16 @@ def test_detect_signal_stops_refining_above_20_percent() -> None:
 
 
 def test_detect_signal_discards_small_final_signals() -> None:
-    """Test that final signals under 1.5% of the data are discarded.
+    """Test that final signals under 0.5% of the data are discarded.
 
     A tiny cluster can pass the per-bin detection threshold and be accepted as its own signal,
-    but it's still discarded at the end if it ends up representing less than 1.5% of the data.
+    but it's still discarded at the end if it ends up representing less than 0.5% of the data.
     """
     data: npt.NDArray[np.int_] = np.concatenate(
-        [np.full(296, 0), np.full(4, 2_000_000)]
+        [np.full(296, 0), np.full(1, 2_000_000)]
     ).astype(np.int_)
-    # 300 points total: 296 (98.67%) + 4 (1.33%). Both clusters are detected (the threshold = 3),
-    # but the 4-point cluster is below the 0.5% (4.5 point) final cut-off and gets dropped.
+    # 300 points total: 296 (98.67%) + 1 (0.33%). Both clusters are detected (the threshold = 3),
+    # but the 1-point cluster is below the 0.5% (1.5 point) final cut-off and gets dropped.
     masks = detect_signal(data, bin_size=500000, init_percentage_threshold=1)
     assert len(masks) == 1
     assert np.sum(masks[0]) == 296
