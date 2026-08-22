@@ -6,6 +6,7 @@ from numpy.typing import NDArray
 from NPET_DP.framework.config import config
 from NPET_DP.framework.constants import FEMTO
 from NPET_DP.framework.path_handler import get_plot_path
+from NPET_DP.processing.calculations import interp_crossing
 from NPET_DP.processing.data_struct import NPETData
 from NPET_DP.processing.helpers import (
     auto_scale_data,
@@ -23,7 +24,7 @@ def plot_time_deviation(data: NPETData, frequency: int, name: str) -> None:
     :param frequency: Frequency of the data
     :param name: Name of the file.
     """
-    # The allantools package is poorly made and its import is very timely, hence the lazy import
+    # The allantools package is poorly made, and its import is very timely, hence the lazy import
     from allantools import tdev
 
     assert frequency > 0, f"Frequency must be positive: {frequency}"

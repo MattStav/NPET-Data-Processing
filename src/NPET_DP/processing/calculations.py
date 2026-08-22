@@ -124,8 +124,10 @@ def calculate_delay(
                 diff: int = e_femto - s_femto
                 diff_abs: int = abs(diff)
             # Case when measurements happened on a different second, but they fulfill conditions for potential cross
-            elif e_sec > s_sec and e_femto > s_femto and (
-                e_femto > half_femto or s_femto > half_femto
+            elif (
+                e_sec > s_sec
+                and e_femto > s_femto
+                and (e_femto > half_femto or s_femto > half_femto)
             ):
                 diff_abs = FEMTO - abs(e_femto - s_femto)
                 # Choose the sign of the difference based on which epoch is earlier
@@ -241,7 +243,9 @@ def detect_signal(
     # Discard final signals that end up too small to be meaningful
     min_final_threshold: float = len(data_delay) * 0.5 / 100
     return tuple(
-        mask for mask in masks_of_horizontal_lines if np.sum(mask) >= min_final_threshold
+        mask
+        for mask in masks_of_horizontal_lines
+        if np.sum(mask) >= min_final_threshold
     )
 
 
