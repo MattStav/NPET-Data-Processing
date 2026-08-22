@@ -117,9 +117,9 @@ def plot_histogram(
         stacked=True,
     )
     # Mark FWHM in the figure
-    max_arg, fwhm = all_data.calc_fwhm()
+    fwhm, peak_arg = all_data.calc_fwhm()
     # Scale to the same units as the (already scaled) plot axis
-    sc_max_arg: float = scale_num(max_arg, sc_iter)
+    sc_max_arg: float = scale_num(peak_arg, sc_iter)
     sc_fwhm: float = scale_num(fwhm, sc_iter)
     peak_bin: int = int(
         np.clip(

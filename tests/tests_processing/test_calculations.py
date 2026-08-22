@@ -423,8 +423,8 @@ def test_get_fwhm_single_peak() -> None:
         + [50000, 60000, 70000, 80000, 90000]
     )
     data = _structured_data(values)
-    fwhm_center, fwhm = calc_fwhm(data)
-    assert fwhm_center == 45000
+    fwhm, peak_place = calc_fwhm(data)
+    assert peak_place == 45000
     assert np.isclose(fwhm, 10204.0816, atol=0.01)
 
 
@@ -441,8 +441,8 @@ def test_get_fwhm_center_uses_highest_bin_not_crossing_midpoint() -> None:
         + [60000, 70000, 80000, 90000]
     )
     data = _structured_data(values)
-    fwhm_center, fwhm = calc_fwhm(data)
-    assert fwhm_center == 45000
+    fwhm, peak_place = calc_fwhm(data)
+    assert peak_place == 45000
     assert np.isclose(fwhm, 13435.3741, atol=0.01)
 
 

@@ -175,10 +175,10 @@ class NPETData(BaseModel):
         """
         return detect_signal(self.femto)
 
-    def calc_fwhm(self) -> tuple[int, float]:
+    def calc_fwhm(self) -> tuple[float, int]:
         """Calculate the full-width half-maximum (FWHM) of the data.
 
-        :return: The place and value of the FWHM in femtoseconds.
+        :return: The value of the FWHM in femtoseconds and the place where the peak occurs.
         """
         return calc_fwhm(self.structured_arr)
 

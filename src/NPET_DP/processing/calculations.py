@@ -350,11 +350,11 @@ def get_bin_count(data_spread: float, target_bin_size_fs: int = 10_000) -> int:
 
 
 @validate_inputs
-def calc_fwhm(data: NDArray) -> tuple[int, float]:
+def calc_fwhm(data: NDArray) -> tuple[float, int]:
     """Calculate the full-width half-maximum (FWHM) of the data.
 
     :param data: Data to be processed, in the FW standard format.
-    :return: The place and value of the FWHM in femtoseconds.
+    :return: The value of the FWHM in femtoseconds and the place where the peak occurs.
     """
     femto = data["femto"]
     bins = get_bin_count(femto.max() - femto.min())
@@ -388,5 +388,5 @@ def calc_fwhm(data: NDArray) -> tuple[int, float]:
         )
     )
     fwhm: float = signal_max - signal_min
-    fwhm_center: int = round(bin_centers[np.argmax(counts)])
-    return fwhm_center, fwhm
+    peak_place: int = round(bin_centers[np.argmax(counts)])
+    return fwhm, peak_place
