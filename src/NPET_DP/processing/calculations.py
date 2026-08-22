@@ -154,8 +154,10 @@ def detect_signal(
     data_delay: NDArray[np.int_],
     *,
     bin_size: int = 1_000_000,  # fs = 1 ns
-    init_percentage_threshold: float = 0.08,
-    max_signal_width: int = 1_000_000,  # fs = 1 ns
+    init_thresh: float = 0.08,
+    min_thresh: float = 0.5,
+    max_thresh: float = 20,
+    signal_upper_bound: int = 1_000_000,  # fs = 1 ns
 ) -> tuple[NDArray[np.bool_], ...]:
     """Detect signals in the delay data by identifying horizontal lines (clusters of similar delay values).
 
@@ -168,25 +170,26 @@ def detect_signal(
     Final signals containing less than 1.5% of the data are discarded.
     :param data_delay: Data to be processed, the femtoseconds delay column from the data.
     :param bin_size: The size of the bins in femtoseconds into which the data will be split (keyword-only).
-    :param init_percentage_threshold: The percentage of data that must be in a bin to be considered a signal (keyword-only).
-    :param max_signal_width: Maximum signal width in femtoseconds before the threshold is doubled and the signal re-detected (keyword-only).
+    :param init_thresh: The percentage of data that must be in a bin to be considered a signal (keyword-only).
+    :param max_thresh: The maximum percentage of data that can be in a bin to be considered a signal.
+    The iteration stops once the required percentage crosses this threshold. (keyword-only)
+    :param min_thresh: The minimum percentage of data that must be in a bin to be considered a signal (keyword-only).
+    :param signal_upper_bound: Maximum signal width in femtoseconds before the threshold is doubled and the signal re-detected (keyword-only).
     :return: Boolean masks indicating detected signals.
     Each mask corresponds to a detected signal (horizontal line) in the data.
     """
     assert data_delay.ndim == 1, "Data must be 1D"
     assert bin_size > 0, "Bin size must be positive"
-    assert 0 <= init_percentage_threshold <= 10, "Percentage threshold must be [0,10]"
-    assert max_signal_width > 0, "Max signal width must be positive"
-    max_percentage_threshold: float = 20
+    assert 0 <= init_thresh <= 10, "Percentage threshold must be [0,10]"
+    assert 0 <= min_thresh <= 10, "Percentage threshold must be [0,10]"
+    assert 0 <= max_thresh <= 100, "Percentage threshold must be [0,100]"
+    assert signal_upper_bound > 0, "Max signal width must be positive"
 
-    def find_groups(
-        mask: NDArray[np.bool_],
-        percentage_threshold: float,
-    ) -> list[NDArray[np.bool_]]:
+    def find_groups(mask: NDArray[np.bool_], thresh: float) -> list[NDArray[np.bool_]]:
         """Detect horizontal lines within the given subset of data_delay, above the given threshold.
 
         :param mask: Boolean mask indicating which data points to consider.
-        :param percentage_threshold: The percentage of data that must be in a bin to be considered a signal.
+        :param thresh: The percentage of data that must be in a bin to be considered a signal.
         :return: List of boolean masks indicating detected signals within the subset.
         """
         subset: NDArray[np.int_] = data_delay[mask]
@@ -199,7 +202,7 @@ def detect_signal(
             bins=bin_count,
             range=(subset.min(), subset.max()),
         )
-        threshold: float = len(data_delay) * percentage_threshold / 100
+        threshold: float = len(data_delay) * thresh / 100
         high_density_bins: NDArray[np.int_] = np.where(counts > threshold)[0]
         # Find consecutive groups of high-density bins and group them together
         groups = np.split(
@@ -219,18 +222,14 @@ def detect_signal(
     full_mask: NDArray[np.bool_] = np.ones(data_delay.shape, dtype=np.bool_)
     # Queue of (mask, percentage_threshold) pairs still needing to be checked/refined
     pending: list[tuple[NDArray[np.bool_], float]] = [
-        (mask, init_percentage_threshold)
-        for mask in find_groups(full_mask, init_percentage_threshold)
+        (mask, init_thresh) for mask in find_groups(full_mask, init_thresh)
     ]
     masks_of_horizontal_lines: list[NDArray[np.bool_]] = []
     while pending:
         mask, percentage_threshold = pending.pop(0)
         signal: NDArray[np.int_] = data_delay[mask]
         width: int = signal.max() - signal.min()
-        if (
-            width > max_signal_width
-            and percentage_threshold * 2 <= max_percentage_threshold
-        ):
+        if width > signal_upper_bound and percentage_threshold * 2 <= max_thresh:
             # Signal too wide: double the threshold and re-detect within just this signal's data,
             # which may split it into several narrower signals to check again.
             percentage_threshold *= 2
@@ -241,7 +240,7 @@ def detect_signal(
         else:
             masks_of_horizontal_lines.append(mask)
     # Discard final signals that end up too small to be meaningful
-    min_final_threshold: float = len(data_delay) * 0.5 / 100
+    min_final_threshold: float = len(data_delay) * min_thresh / 100
     return tuple(
         mask
         for mask in masks_of_horizontal_lines

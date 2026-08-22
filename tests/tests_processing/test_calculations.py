@@ -272,7 +272,7 @@ def test_detect_signal_single_cluster() -> None:
     # 100 points, 20 at 1000, 80 at 500_000
     data: npt.NDArray[np.int_] = np.array([1000] * 20 + [500000] * 80, dtype=np.int_)
     # Any bin with >= 1 point will be selected if we use percentage_threshold=0.15
-    masks = detect_signal(data, bin_size=40000, init_percentage_threshold=0.15)
+    masks = detect_signal(data, bin_size=40000, init_thresh=0.15)
     assert len(masks) == 2
     assert np.sum(masks[0]) == 20
     assert np.sum(masks[1]) == 80
@@ -288,7 +288,7 @@ def test_detect_signal_no_signal() -> None:
     data: npt.NDArray[np.int_] = np.arange(0, 1000000, 10000, dtype=np.int_).astype(
         np.int_
     )
-    masks = detect_signal(data, bin_size=5000, init_percentage_threshold=1.1)
+    masks = detect_signal(data, bin_size=5000, init_thresh=1.1)
     assert len(masks) == 0
 
 
@@ -301,7 +301,7 @@ def test_detect_signal_multiple_clusters() -> None:
         [np.full(30, 100000), np.full(30, 500000), np.full(30, 900000)]
     ).astype(np.int_)
     # 90 points total. threshold = 90 * 0.1 / 100 = 0.09.
-    masks = detect_signal(data, bin_size=10000, init_percentage_threshold=0.1)
+    masks = detect_signal(data, bin_size=10000, init_thresh=0.1)
     assert len(masks) == 3
     for mask in masks:
         assert np.sum(mask) == 30
@@ -315,7 +315,7 @@ def test_detect_signal_consecutive_bins() -> None:
     """
     data: npt.NDArray[np.int_] = np.array([5000] * 10 + [15000] * 10, dtype=np.int_)
     # total 20 points. threshold = 20 * 0.05 / 100 = 0.01.
-    masks = detect_signal(data, bin_size=10000, init_percentage_threshold=0.05)
+    masks = detect_signal(data, bin_size=10000, init_thresh=0.05)
     assert len(masks) == 1
     assert np.sum(masks[0]) == 20
 
@@ -331,7 +331,7 @@ def test_detect_signal_overlapping_clusters() -> None:
     # threshold = 20 * 0.05 / 100 = 0.01.
     # Bins 0 and 2 are selected. Bin 1 is NOT.
     # So they should NOT be grouped.
-    masks = detect_signal(data, bin_size=10000, init_percentage_threshold=0.05)
+    masks = detect_signal(data, bin_size=10000, init_thresh=0.05)
     assert len(masks) == 2
     assert np.sum(masks[0]) == 10
     assert np.sum(masks[1]) == 10
@@ -361,8 +361,8 @@ def test_detect_signal_splits_wide_signal_on_refinement() -> None:
     masks = detect_signal(
         data,
         bin_size=300000,
-        init_percentage_threshold=2,
-        max_signal_width=1_000_000,
+        init_thresh=2,
+        signal_upper_bound=1_000_000,
     )
     assert len(masks) == 2
     assert np.sum(masks[0]) == 60
@@ -386,8 +386,8 @@ def test_detect_signal_stops_refining_above_20_percent() -> None:
     masks = detect_signal(
         data,
         bin_size=500000,
-        init_percentage_threshold=10,
-        max_signal_width=1_000_000,
+        init_thresh=10,
+        signal_upper_bound=1_000_000,
     )
     assert len(masks) == 1
     assert np.sum(masks[0]) == 300
@@ -405,7 +405,7 @@ def test_detect_signal_discards_small_final_signals() -> None:
     ).astype(np.int_)
     # 300 points total: 296 (98.67%) + 1 (0.33%). Both clusters are detected (the threshold = 3),
     # but the 1-point cluster is below the 0.5% (1.5 point) final cut-off and gets dropped.
-    masks = detect_signal(data, bin_size=500000, init_percentage_threshold=1)
+    masks = detect_signal(data, bin_size=500000, init_thresh=1)
     assert len(masks) == 1
     assert np.sum(masks[0]) == 296
 
