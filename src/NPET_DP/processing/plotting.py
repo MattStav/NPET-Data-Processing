@@ -131,7 +131,7 @@ def plot_histogram(
     half_max: float = float(np.asarray(counts)[-1][peak_bin] / 2)
     x_left: float = sc_max_arg - sc_fwhm / 2
     x_right: float = sc_max_arg + sc_fwhm / 2
-    offset: float = sc_fwhm * 0.08  # tweak the fraction to taste
+    offset: float = sc_fwhm * 0.8  # tweak the fraction to taste
     plt.annotate(
         "",
         xy=(x_left, half_max),
@@ -144,10 +144,11 @@ def plot_histogram(
         xytext=(x_right + offset, half_max),
         arrowprops={"arrowstyle": "->", "color": "black", "lw": 2},
     )
+    auto_sc_fwhm, auto_fwhm_iter = auto_scale_num(fwhm)
     plt.text(
         x_right + offset * 1.15,
         half_max,
-        f"FWHM = {fwhm * 1000:.2f} ps",
+        f"FWHM = {auto_sc_fwhm:.2f} {get_unit('fs', auto_fwhm_iter)}",
         color="black",
         ha="left",
         va="center",
