@@ -83,7 +83,6 @@ def plot_histogram(
     signal_data: NPETData,
     name: str,
     bin_count: int,
-    xrange: tuple[float, float] | tuple[()] = (),
 ) -> None:
     """Plot a histogram of the measured data.
 
@@ -91,7 +90,6 @@ def plot_histogram(
     :param signal_data: Signal data as an NPETData object.
     :param name: Name of the plot.
     :param bin_count: Number of bins for the histogram.
-    :param xrange: Range of the x-axis.
     """
     bgr_data = all_data.femto_not_in(signal_data)
     sc_bgr, sc_iter = auto_scale_data(bgr_data.femto)
@@ -170,8 +168,6 @@ def plot_histogram(
             f"σ={sc_std:.3f} {get_unit('fs', sc_std_iter)}",
             alpha=0.5,
         )
-    if xrange:
-        plt.xlim(xrange)
     plt.title(f"Histogram - {name}")
     plt.xlabel(f"Delay [{get_unit('fs', sc_iter)}]")
     plt.ylabel("Counts [n]")

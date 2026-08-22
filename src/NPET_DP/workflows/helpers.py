@@ -100,14 +100,12 @@ def histogram_plot_loop(data: NPETData, name: str) -> NPETData:
         data_spread: float = selection.femto.max() - selection.femto.min()
         bin_count = get_bin_count(data_spread)
         typer.echo(f"Histogram bin count = {bin_count}")
-        xrange = get_signal_xrange(round(sigma_data.mean), sigma_data.std)
-        typer.echo(f"Histogram x-range = {xrange[0]:.4f} fs to {xrange[1]:.4f} fs")
+        precise_auto_range(round(sigma_data.mean), round(sigma_data.std))
         plot_histogram(
             all_data=selection,
             signal_data=sigma_data if sigma_i != 1 else NPETData.empty(),
             name=name,
             bin_count=bin_count,
-            xrange=xrange,
         )
         redraw = typer.prompt(
             "Rescale x-axis?",
