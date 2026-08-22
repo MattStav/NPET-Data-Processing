@@ -265,22 +265,27 @@ def recursive_sigma_filter(
     """
     assert max_iter > 0, "Max iterations must be positive"
     assert data.size > 0, "Data must not be empty"
-    new_data: NDArray = data.copy()
+    # Work on a contiguous copy of just the relevant column (instead of
+    # re-filtering the whole structured array every iteration) and only
+    # materialize the filtered structured result once, at the end.
+    values: NDArray[np.int64] = data["femto"]
+    idx: NDArray[np.int64] = np.arange(values.size).astype(np.int64)
     prev_data_len: int = 0
     iteration: int = 0
     # Iterate until the data is no longer changing in size
-    while prev_data_len != len(new_data):
+    while prev_data_len != len(values):
         if iteration == max_iter:
             raise RuntimeError(f"Max iterations reached!: {iteration}")
-        prev_data_len = len(new_data)
-        values: NDArray = new_data["femto"]
-        mn: float = float(np.mean(values))
-        std: float = float(np.std(values))
-        # Filter out the outliers from the new_data
-        low_filter: NDArray[np.bool_] = np.asarray(values >= mn - sigma_mult * std)
-        high_filter: NDArray[np.bool_] = np.asarray(values <= mn + sigma_mult * std)
-        new_data = new_data[low_filter & high_filter]
+        prev_data_len = len(values)
+        mn: int = round(values.mean())
+        diff: NDArray[np.int64] = values - mn
+        std: float = np.sqrt(diff.dot(diff) / diff.size)
+        # Filter out the outliers
+        keep: NDArray[np.bool_] = np.abs(diff) <= sigma_mult * std
+        values = values[keep]
+        idx = idx[keep]
         iteration += 1
+    new_data: NDArray = data[idx]
     check_data_structure(new_data)
     return new_data, iteration
 
