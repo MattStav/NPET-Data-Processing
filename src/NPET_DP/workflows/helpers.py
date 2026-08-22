@@ -45,7 +45,7 @@ def rough_auto_range(delays: NPETData, signal: NDArray[np.bool_]) -> None:
     typer.echo("\nAuto-ranging to focus roughly on the detected signal")
     signal_delays = delays.filter_range(signal)
     sig_place, sig_width = signal_delays.calc_fwhm()
-    signal_range = get_signal_xrange(sig_place, sig_width * 3)
+    signal_range = get_signal_xrange(sig_place, sig_width * 2)
     config.assign_delays(min_del=signal_range[0], max_del=signal_range[1])
 
 

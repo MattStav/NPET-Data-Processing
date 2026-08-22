@@ -185,7 +185,7 @@ def get_signal_xrange(sig_place: int, sig_width: float) -> tuple[float, float]:
     :param sig_width: The width of the signal in femtoseconds.
     :return: A tuple defining the range min and max values.
     """
-    range_size: float = sig_width * 3
+    range_size: float = sig_width * 6
     return (
         sig_place - range_size / 4,
         sig_place + range_size * 3 / 4,
