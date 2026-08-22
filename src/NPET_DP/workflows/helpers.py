@@ -97,13 +97,13 @@ def histogram_plot_loop(data: NPETData, name: str) -> NPETData:
         typer.secho(f"Return rate: {ret_rate:.2%}", fg=typer.colors.CYAN)
         # Plot the histogram of the filtered data
         typer.echo("\nPlotting histogram of the measured delays")
-        data_spread: float = selection.femto.max() - selection.femto.min()
+        precise_auto_range(round(sigma_data.mean), round(sigma_data.std))
+        precise_sel = select_data_within_range(data)
+        data_spread: float = precise_sel.femto.max() - precise_sel.femto.min()
         bin_count = get_bin_count(data_spread, 10_000)
         typer.echo(f"Histogram bin count = {bin_count}")
-        precise_auto_range(round(sigma_data.mean), round(sigma_data.std))
-        precise_selection = select_data_within_range(data)
         plot_histogram(
-            all_data=precise_selection,
+            all_data=precise_sel,
             signal_data=sigma_data if sigma_i != 1 else NPETData.empty(),
             name=name,
             bin_count=bin_count,
