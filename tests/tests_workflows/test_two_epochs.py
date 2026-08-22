@@ -8,8 +8,8 @@ from _pytest.monkeypatch import MonkeyPatch
 from NPET_DP.framework.config import config
 from NPET_DP.processing.data_struct import NPETData
 from NPET_DP.workflows.helpers import (
-    rough_auto_range,
     get_bin_count,
+    rough_auto_range,
     select_data_within_range,
 )
 from NPET_DP.workflows.two_epochs import (
