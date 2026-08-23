@@ -30,7 +30,7 @@ def test_input_data_dir_setter_prompts(tmp_path: Path) -> None:
     """Test data directory user prompt.
 
     Test that the data directory can be set to None,
-    which leads to the user being prompted to define new directory.
+    which leads to the user being prompted to define a new directory.
     Failing this test means signals error in the data directory setting logic.
     """
     config = __AppConfig()
@@ -40,7 +40,7 @@ def test_input_data_dir_setter_prompts(tmp_path: Path) -> None:
 
 
 def test_input_data_dir_prompt_accepts_relative_path(tmp_path: Path) -> None:
-    """Test data directory accepts relative path.
+    """Test data directory accepts a relative path.
 
     Test that the data directory prompt accepts a relative path,
     in which case the path should be appended to the latest selection.
@@ -109,7 +109,7 @@ def test_app_config_sigma_default_value() -> None:
     """Test the default sigma value.
 
     The default sigma should be 2.2,
-    the most commonly used values for processing single photon detector's data.
+    the most commonly used value for processing single photon detector's data.
     """
     config = __AppConfig()
     with patch("typer.prompt", return_value=3.0) as mock_prompt:
@@ -117,9 +117,9 @@ def test_app_config_sigma_default_value() -> None:
     assert mock_prompt.call_args.kwargs["default"] == 2.2
 
 
-@pytest.mark.parametrize("min_delay", [100.0, 1000.23, 534.01])
-@pytest.mark.parametrize("max_delay", [200.0, 2000.48, 12.3])
-def test_app_config_delays_valid(min_delay: float, max_delay: float) -> None:
+@pytest.mark.parametrize("min_delay", [100, 1000, 534])
+@pytest.mark.parametrize("max_delay", [200, 2000, 12])
+def test_app_config_delays_valid(min_delay: int, max_delay: int) -> None:
     """Test that the min and max delays can be set to valid values."""
     config = __AppConfig()
     config.min_delay = min_delay
@@ -238,8 +238,8 @@ def test_app_config_max_delay_getter_prompts_when_unset(mock_prompt: MagicMock) 
         ("min", 0.5, None, None, 0.5 * 1e6),
         ("max", 2.0, None, None, 2.0 * 1e6),
         # Testing validation against each other
-        ("min", 0.5, None, 1.0 * 1e6, 0.5 * 1e6),
-        ("max", 2.0, 1.0 * 1e6, None, 2.0 * 1e6),
+        ("min", 0.5, None, 1_000_000, 0.5 * 1e6),
+        ("max", 2.0, 1_000_000, None, 2.0 * 1e6),
     ],
 )
 @patch("typer.prompt")
@@ -247,8 +247,8 @@ def test_app_config_prompt_delay_valid(
     mock_prompt: MagicMock,
     delay_type: Literal["min", "max"],
     input_val: float,
-    initial_min: float | None,
-    initial_max: float | None,
+    initial_min: int | None,
+    initial_max: int | None,
     expected_val: float,
 ) -> None:
     """Test valid delay prompts.
@@ -272,9 +272,9 @@ def test_app_config_prompt_delay_valid(
     "delay_type, inputs, initial_min, initial_max, expected_final_val",
     [
         # Min >= Max
-        ("min", [2.0, 0.5], None, 1.0 * 1e6, 0.5 * 1e6),
+        ("min", [2.0, 0.5], None, 1_000_000, 0.5 * 1e6),
         # Max <= Min
-        ("max", [0.5, 2.0], 1.0 * 1e6, None, 2.0 * 1e6),
+        ("max", [0.5, 2.0], 1_000_000, None, 2.0 * 1e6),
     ],
 )
 @patch("typer.prompt")
@@ -282,8 +282,8 @@ def test_app_config_prompt_delay_invalid_retry(
     mock_prompt: MagicMock,
     delay_type: Literal["min", "max"],
     inputs: list[float],
-    initial_min: float | None,
-    initial_max: float | None,
+    initial_min: int | None,
+    initial_max: int | None,
     expected_final_val: float,
 ) -> None:
     """Test delay invalid prompt inputs.
@@ -308,8 +308,8 @@ def test_app_config_prompt_delay_invalid_retry(
 @pytest.mark.parametrize(
     "delay_type, input_val, initial_min, initial_max, expected_val",
     [
-        ("min", 2.0, None, 1.0 * 1e6, 2.0 * 1e6),
-        ("max", 0.5, 1.0 * 1e6, None, 0.5 * 1e6),
+        ("min", 2.0, None, 1_000_000, 2.0 * 1e6),
+        ("max", 0.5, 1_000_000, None, 0.5 * 1e6),
     ],
 )
 @patch("typer.prompt")
@@ -317,14 +317,14 @@ def test_app_config_prompt_delay_no_validate(
     mock_prompt: MagicMock,
     delay_type: Literal["min", "max"],
     input_val: float,
-    initial_min: float | None,
-    initial_max: float | None,
+    initial_min: int | None,
+    initial_max: int | None,
     expected_val: float,
 ) -> None:
     """Test delay prompt with no validation.
 
     Test that the delay can be set using the prompt without any validation.
-    When validation is disabled the prompt should accept values where max < min.
+    When validation is disabled, the prompt should accept values where max < min.
     """
     config = __AppConfig()
     if initial_min is not None:
@@ -339,20 +339,83 @@ def test_app_config_prompt_delay_no_validate(
         assert config.max_delay == expected_val
 
 
+@pytest.mark.parametrize("min_delay", [100, 1000, 534])
+@pytest.mark.parametrize("max_delay", [200, 2000, 12])
+def test_assign_delays_sets_min_and_max(min_delay: int, max_delay: int) -> None:
+    """Test that assign_delays stores the exact values it is given.
+
+    assign_delays goes through the public setters directly, and delays are
+    stored in fs as ints, so no further conversion should happen.
+    """
+    config = __AppConfig()
+    config.assign_delays(min_delay, max_delay)
+    assert config.min_delay == min_delay
+    assert config.max_delay == max_delay
+
+
+def test_assign_delays_overwrites_previous_values() -> None:
+    """Test that a second call to assign_delays replaces the previous values."""
+    config = __AppConfig()
+    config.assign_delays(1, 2)
+    config.assign_delays(3, 4)
+    assert config.min_delay == 3
+    assert config.max_delay == 4
+
+
+@pytest.mark.parametrize("min_delay, max_delay", [(1.0, 2), (1, 2.0), (1.0, 2.0)])
+def test_assign_delays_rejects_non_int(min_delay: Any, max_delay: Any) -> None:
+    """Test that non-int delay values are rejected.
+
+    Delays are stored in fs as ints, so the min_delay/max_delay setters
+    assert that the value is an int; assign_delays should propagate that
+    failure for float inputs (this was previously a bug where delays could
+    be incorrectly stored as float).
+    """
+    config = __AppConfig()
+    with pytest.raises(AssertionError):
+        config.assign_delays(min_delay, max_delay)
+
+
+@patch("NPET_DP.framework.config.get_unit")
+@patch("NPET_DP.framework.config.auto_scale_num")
+@patch("typer.echo")
+def test_assign_delays_echoes_formatted_range(
+    mock_echo: MagicMock,
+    mock_auto_scale_num: MagicMock,
+    mock_get_unit: MagicMock,
+) -> None:
+    """Test that assign_delays reports the scaled range via typer.echo.
+
+    auto_scale_num/get_unit are mocked, so the test only verifies that
+    assign_delays wires their outputs into the echoed message correctly.
+    """
+    mock_auto_scale_num.side_effect = [(1.5, -1), (2.25, 0)]
+    mock_get_unit.side_effect = ["ps", "fs"]
+
+    config = __AppConfig()
+    config.assign_delays(1500, 2)
+
+    assert mock_auto_scale_num.call_args_list[0].args == (1500,)
+    assert mock_auto_scale_num.call_args_list[1].args == (2,)
+    assert mock_get_unit.call_args_list[0].args == ("fs", -1)
+    assert mock_get_unit.call_args_list[1].args == ("fs", 0)
+    mock_echo.assert_called_once_with("Range set to min: 1.5000 ps, max: 2.2500 fs")
+
+
 @pytest.mark.parametrize(
     "delay_type, initial_val, expected_default",
     [
         ("min", None, 0),
         ("max", None, 0),
-        ("min", 1.23 * 1e6, 1.23),
-        ("max", 4.56 * 1e6, 4.56),
+        ("min", 1_230_000, 1.23),
+        ("max", 4_560_000, 4.56),
     ],
 )
 @patch("typer.prompt")
 def test_app_config_prompt_delay_default_value(
     mock_prompt: MagicMock,
     delay_type: Literal["min", "max"],
-    initial_val: float | None,
+    initial_val: int | None,
     expected_default: float,
 ) -> None:
     """Test prompt default value.
