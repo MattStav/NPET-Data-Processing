@@ -334,25 +334,22 @@ def get_bin_count(data_spread: float, target_bin_size_fs: int = 10_000) -> int:
     """Calculate the bin count.
 
     Calculate the number of bins for a histogram based on the data spread and target bin size.
+    If there's too much data (>50 ns), then adjust the bin size to match 1000 bins
+    Otherwise, use the supplied bin size in femtoseconds
     :param data_spread: The values spread across the data.
     :param target_bin_size_fs: Target bin size in femtoseconds.
     :return: Number of bins for the histogram.
     """
-    # Difference between the max and min delay
-    if data_spread > 50_000_000:  # fs
-        # If there's too much data (>50 ns), then adjust the bin size to match 1000 bins
-        bin_size: float = data_spread / 1000
-    else:
-        # Otherwise, use the supplied bin size in femtoseconds
-        bin_size: float = target_bin_size_fs
-    bin_count: int = math.floor(data_spread / bin_size)
-    return bin_count
+    thresh: int = 50_000_000  # fs = 50 ns
+    bin_size: float = data_spread / 1000 if data_spread > thresh else target_bin_size_fs
+    return math.floor(data_spread / bin_size)
 
 
 @validate_inputs
 def calc_fwhm(data: NDArray) -> tuple[float, int]:
     """Calculate the full-width half-maximum (FWHM) of the data.
 
+    Construct a histogram of the data and find the peak of the histogram.
     :param data: Data to be processed, in the FW standard format.
     :return: The value of the FWHM in femtoseconds and the place where the peak occurs.
     """
