@@ -15,10 +15,10 @@ class __AppConfig(BaseModel):
     _input_data_dir: Path = PrivateAttr(default=Path.cwd())
     # Data gathering frequency used in the processing
     _frequency: int | None = PrivateAttr(default=None)
-    # Minimum delay in ns by which to filter the data
-    _min_delay: float | None = PrivateAttr(default=None)
-    # Maximum delay in ns by which to filter the data
-    _max_delay: float | None = PrivateAttr(default=None)
+    # Minimum delay in fs by which to filter the data
+    _min_delay: int | None = PrivateAttr(default=None)
+    # Maximum delay in fs by which to filter the data
+    _max_delay: int | None = PrivateAttr(default=None)
     # Sigma value for the gaussian filter
     _sigma: float | None = PrivateAttr(default=None)
 
@@ -113,7 +113,7 @@ class __AppConfig(BaseModel):
                 typer.secho("Invalid sigma value!", fg=typer.colors.RED)
 
     @property
-    def min_delay(self) -> float:
+    def min_delay(self) -> int:
         if not self._min_delay:
             typer.echo("Minimum delay filter value not set. Setting it now...")
             self.prompt_delay("min")
@@ -121,12 +121,12 @@ class __AppConfig(BaseModel):
         return self._min_delay
 
     @min_delay.setter
-    def min_delay(self, new_min_delay: float) -> None:
-        assert isinstance(new_min_delay, float)
+    def min_delay(self, new_min_delay: int) -> None:
+        assert isinstance(new_min_delay, int)
         self._min_delay = new_min_delay
 
     @property
-    def max_delay(self) -> float:
+    def max_delay(self) -> int:
         if not self._max_delay:
             typer.echo("Maximum delay filter value not set. Setting it now...")
             self.prompt_delay("max")
@@ -134,8 +134,8 @@ class __AppConfig(BaseModel):
         return self._max_delay
 
     @max_delay.setter
-    def max_delay(self, new_max_delay: float) -> None:
-        assert isinstance(new_max_delay, float)
+    def max_delay(self, new_max_delay: int) -> None:
+        assert isinstance(new_max_delay, int)
         self._max_delay = new_max_delay
 
     def prompt_delay(
@@ -151,12 +151,16 @@ class __AppConfig(BaseModel):
         """
 
         def validate_delay(val: float) -> bool:
-            """Validate the delay value."""
+            """Validate the delay value.
+
+            :param val: The delay value in ns to validate.
+            :return: True if the delay value is valid, False otherwise.
+            """
             if delay_type == "min":
                 return self._max_delay is None or val * mult < self._max_delay
             if delay_type == "max":
                 return self._min_delay is None or val * mult > self._min_delay
-            return True
+            return False
 
         mult: float = 1e6  # ns to fs
         attr = getattr(self, f"_{delay_type}_delay")
@@ -171,7 +175,7 @@ class __AppConfig(BaseModel):
                 break
             typer.secho("Invalid delay value!", fg=typer.colors.RED)
 
-    def assign_delays(self, min_del: float, max_del: float) -> None:
+    def assign_delays(self, min_del: int, max_del: int) -> None:
         """Assign the min and max delay values to the config.
 
         :param min_del: Minimum delay value in ns
