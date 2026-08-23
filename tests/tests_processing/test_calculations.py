@@ -504,7 +504,7 @@ def test_interp_crossing_extrapolates_outside_range() -> None:
         (50_000_000, 10_000, 5000),  # exactly at the threshold -> still uses target_bin_size_fs
         (100_000_000, 10_000, 1000),  # above threshold -> bin size scales to fit 1000 bins
         (50_000, 5_000, 10),  # custom target_bin_size_fs
-        (0, 10_000, 0),  # empty spread
+        (0, 10_000, 1),  # empty spread
     ],
 )
 def test_get_bin_count(

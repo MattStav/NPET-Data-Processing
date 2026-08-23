@@ -338,11 +338,12 @@ def get_bin_count(data_spread: float, target_bin_size_fs: int = 10_000) -> int:
     Otherwise, use the supplied bin size in femtoseconds
     :param data_spread: The values spread across the data.
     :param target_bin_size_fs: Target bin size in femtoseconds.
-    :return: Number of bins for the histogram.
+    :return: Number of bins for the histogram. Always at least 1, even when the
+    spread is smaller than the target bin size.
     """
     thresh: int = 50_000_000  # fs = 50 ns
     bin_size: float = data_spread / 1000 if data_spread > thresh else target_bin_size_fs
-    return math.floor(data_spread / bin_size)
+    return math.floor(data_spread / bin_size) or 1
 
 
 @validate_inputs
