@@ -273,7 +273,7 @@ def test_calculate_delay_is_fast_on_good_case_input() -> None:
 
     When every start epoch matches the very next stop epoch (the common case in
     practice), the inner loop exits after a single check instead of scanning the
-    full `frequency * 2 + 10` window, so this should run much faster than the
+    full `frequency * 2 + 10` window. Therefore, this should run much faster than the
     worst case in test_calculate_delay_is_fast_on_worst_case_input.
     """
     n: int = 20_000
@@ -284,7 +284,9 @@ def test_calculate_delay_is_fast_on_good_case_input() -> None:
     data_stop = np.array([(i, val + 1000) for i in range(n)], dtype=DATA_TYPE)
 
     start_time = time.perf_counter()
-    delays = calculate_delay(data_start=data_start, data_stop=data_stop, frequency=frequency)
+    delays = calculate_delay(
+        data_start=data_start, data_stop=data_stop, frequency=frequency
+    )
     elapsed = time.perf_counter() - start_time
 
     assert len(delays) == n, "Every point should match"
@@ -305,12 +307,16 @@ def test_calculate_delay_is_fast_on_worst_case_input() -> None:
     frequency: int = 100
     val: int = 100_000_000_000_000
     data_start = np.array([(i, val) for i in range(n)], dtype=DATA_TYPE)
-    # Offset the stop data beyond the searched interval (FEMTO / (2 * frequency))
+    # Offset the stop data beyond the searched interval (FEMTO / (2 x frequency))
     # so no start epoch ever matches, forcing the full worst-case window scan.
-    data_stop = np.array([(i, val + 6_000_000_000_000) for i in range(n)], dtype=DATA_TYPE)
+    data_stop = np.array(
+        [(i, val + 6_000_000_000_000) for i in range(n)], dtype=DATA_TYPE
+    )
 
     start_time = time.perf_counter()
-    delays = calculate_delay(data_start=data_start, data_stop=data_stop, frequency=frequency)
+    delays = calculate_delay(
+        data_start=data_start, data_stop=data_stop, frequency=frequency
+    )
     elapsed = time.perf_counter() - start_time
 
     assert len(delays) == 0, "Nothing should match given the large offset"
@@ -501,8 +507,16 @@ def test_interp_crossing_extrapolates_outside_range() -> None:
     [
         (100_000, 10_000, 10),  # default-sized spread: uses target_bin_size_fs directly
         (25_000, 10_000, 2),  # not evenly divisible -> floors down
-        (50_000_000, 10_000, 5000),  # exactly at the threshold -> still uses target_bin_size_fs
-        (100_000_000, 10_000, 1000),  # above threshold -> bin size scales to fit 1000 bins
+        (
+            50_000_000,
+            10_000,
+            5000,
+        ),  # exactly at the threshold -> still uses target_bin_size_fs
+        (
+            100_000_000,
+            10_000,
+            1000,
+        ),  # above threshold -> bin size scales to fit 1000 bins
         (50_000, 5_000, 10),  # custom target_bin_size_fs
         (0, 10_000, 1),  # empty spread
     ],
@@ -528,9 +542,7 @@ def test_get_fwhm_single_peak() -> None:
     matches the interpolated half-max crossing points.
     """
     values = (
-        [0, 10000, 20000, 30000]
-        + [45000] * 50
-        + [50000, 60000, 70000, 80000, 90000]
+        [0, 10000, 20000, 30000] + [45000] * 50 + [50000, 60000, 70000, 80000, 90000]
     )
     data = _structured_data(values)
     fwhm, peak_place = calc_fwhm(data)
@@ -678,9 +690,9 @@ def test_remove_drift_linear_trend() -> None:
 
     A pure linear trend should be fully removed, leaving ~0 residuals.
     """
-    time = np.arange(20)
-    values = 3 * time + 5
-    data = np.array(list(zip(time, values, strict=True)), dtype=DATA_TYPE)
+    time_data = np.arange(20)
+    values = 3 * time_data + 5
+    data = np.array(list(zip(time_data, values, strict=True)), dtype=DATA_TYPE)
     residuals = remove_drift(data)["femto"]
     assert np.allclose(residuals, 0, atol=1e-8)
 
@@ -690,9 +702,9 @@ def test_remove_drift_quadratic_trend() -> None:
 
     A quadratic trend should be fully removed, leaving ~0 residuals.
     """
-    time = np.arange(20)
-    values = time**2 - 3 * time + 5
-    data = np.array(list(zip(time, values, strict=True)), dtype=DATA_TYPE)
+    time_data = np.arange(20)
+    values = time_data**2 - 3 * time_data + 5
+    data = np.array(list(zip(time_data, values, strict=True)), dtype=DATA_TYPE)
     residuals = remove_drift(data, 2)["femto"]
     assert np.allclose(residuals, 0, atol=1e-6)
 
@@ -703,11 +715,11 @@ def test_remove_drift_recovers_added_noise() -> None:
     After removing a linear trend, residuals should be noise-scale, not trend-scale.
     """
     rng = np.random.default_rng(42)
-    time = np.arange(50)
-    trend = 3 * time + 1  # grows up to ~148
-    noise = rng.integers(-2, 3, size=time.shape)  # small integer noise
+    time_data = np.arange(50)
+    trend = 3 * time_data + 1  # grows up to ~148
+    noise = rng.integers(-2, 3, size=time_data.shape)  # small integer noise
     values = trend + noise
-    data = np.array(list(zip(time, values, strict=True)), dtype=DATA_TYPE)
+    data = np.array(list(zip(time_data, values, strict=True)), dtype=DATA_TYPE)
     residuals = remove_drift(data, 1)["femto"]
     # A least-squares fit doesn't exactly recover the injected noise (it absorbs
     # part of it into the fitted coefficients), so only check the residual stays
@@ -720,9 +732,9 @@ def test_remove_drift_constant_data() -> None:
 
     Data with no trend should return residuals of ~0.
     """
-    time = np.arange(10)
+    time_data = np.arange(10)
     values = np.full(10, 7)
-    data = np.array(list(zip(time, values, strict=True)), dtype=DATA_TYPE)
+    data = np.array(list(zip(time_data, values, strict=True)), dtype=DATA_TYPE)
     residuals = remove_drift(data)["femto"]
     assert np.allclose(residuals, 0, atol=1e-8)
 
@@ -732,9 +744,9 @@ def test_remove_drift_custom_degree_leaves_unmodeled_component() -> None:
 
     Fitting a lower degree than the data's actual trend should leave a residual curve.
     """
-    time = np.arange(20)
-    values = time**2
-    data = np.array(list(zip(time, values, strict=True)), dtype=DATA_TYPE)
+    time_data = np.arange(20)
+    values = time_data**2
+    data = np.array(list(zip(time_data, values, strict=True)), dtype=DATA_TYPE)
     residuals = remove_drift(data, deg=1)["femto"]
     assert not np.allclose(residuals, 0, atol=1e-3)
 
