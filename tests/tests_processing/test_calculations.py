@@ -10,6 +10,8 @@ from NPET_DP.processing.calculations import (
     calculate_delay,
     detect_signal,
     discard_rows_until_first_col_match,
+    get_bin_count,
+    interp_crossing,
     is_continuous,
     process_overflow,
     recursive_sigma_filter,
@@ -460,6 +462,63 @@ def test_detect_signal_discards_small_final_signals() -> None:
     masks = detect_signal(data, bin_size=500000, init_thresh=1)
     assert len(masks) == 1
     assert np.sum(masks[0]) == 296
+
+
+@pytest.mark.parametrize(
+    "x1, x2, y1, y2, y_target, expected_x",
+    [
+        (0, 10, 0, 100, 50, 5),  # midpoint crossing
+        (0, 10, 0, 10, 3, 3),  # slope of 1
+        (0, 10, 0, 100, 0, 0),  # target equals y1 -> returns x1
+        (0, 10, 0, 100, 100, 10),  # target equals y2 -> returns x2
+        (0, 10, 100, 0, 25, 7.5),  # negative slope
+    ],
+)
+def test_interp_crossing(
+    x1: float,
+    x2: float,
+    y1: float,
+    y2: float,
+    y_target: float,
+    expected_x: float,
+) -> None:
+    """Test that interp_crossing finds the correct linear interpolation point."""
+    assert np.isclose(interp_crossing(x1, x2, y1, y2, y_target), expected_x)
+
+
+def test_interp_crossing_extrapolates_outside_range() -> None:
+    """Test that interp_crossing extrapolates for a target outside [y1, y2].
+
+    The function is a plain linear formula with no clamping, so a y_target
+    outside the [y1, y2] range should extrapolate beyond [x1, x2] rather than
+    being clamped to an endpoint.
+    """
+    assert np.isclose(interp_crossing(0, 10, 0, 10, 20), 20)
+
+
+@pytest.mark.parametrize(
+    "data_spread, target_bin_size_fs, expected_bin_count",
+    [
+        (100_000, 10_000, 10),  # default-sized spread: uses target_bin_size_fs directly
+        (25_000, 10_000, 2),  # not evenly divisible -> floors down
+        (50_000_000, 10_000, 5000),  # exactly at the threshold -> still uses target_bin_size_fs
+        (100_000_000, 10_000, 1000),  # above threshold -> bin size scales to fit 1000 bins
+        (50_000, 5_000, 10),  # custom target_bin_size_fs
+        (0, 10_000, 0),  # empty spread
+    ],
+)
+def test_get_bin_count(
+    data_spread: float,
+    target_bin_size_fs: int,
+    expected_bin_count: int,
+) -> None:
+    """Test that get_bin_count computes the expected number of histogram bins.
+
+    Below (or at) the 50e6 fs threshold, the target bin size is used as-is.
+    Above the threshold, the bin size is scaled so the spread always covers
+    exactly 1000 bins.
+    """
+    assert get_bin_count(data_spread, target_bin_size_fs) == expected_bin_count
 
 
 def test_get_fwhm_single_peak() -> None:
