@@ -34,19 +34,19 @@ def test_returns_when_no_files() -> None:
     mock_from_path.assert_not_called()
 
 
-def test_auto_range() -> None:
+def test_rough_auto_range() -> None:
     """Test autoranging.
 
     Test that auto_range returns the correct range, defined by the signal within the data.
     """
     delays = NPETData(
-        seconds=np.zeros(5, dtype=np.int_).astype(np.int_),
-        femto=np.array([100, 200, 300, 400, 500]),
+        seconds=np.zeros(7, dtype=np.int_).astype(np.int_),
+        femto=np.array([100, 200, 300, 400, 500, 400, 300]),
     )
-    mask = np.array([False, True, True, True, False])
+    mask = np.array([False, True, True, True, True, True, False])
     rough_auto_range(delays, mask)
-    assert config.min_delay == -340.0
-    assert config.max_delay == 1260.0
+    assert config.min_delay == -1000
+    assert config.max_delay == 4400
 
 
 def test_select_data_within_range() -> None:
