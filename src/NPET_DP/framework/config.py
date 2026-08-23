@@ -171,11 +171,12 @@ class __AppConfig(BaseModel):
                 break
             typer.secho("Invalid delay value!", fg=typer.colors.RED)
 
-    def assign_delays(self, *, min_del: float, max_del: float) -> None:
+    def assign_delays(self, min_del: float, max_del: float) -> None:
         """Assign the min and max delay values to the config.
 
         :param min_del: Minimum delay value in ns
         :param max_del: Maximum delay value in ns
+        :raises ValueError: If the min delay is greater than the max delay.
         """
         self.min_delay = min_del
         self.max_delay = max_del

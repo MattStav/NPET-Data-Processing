@@ -46,7 +46,7 @@ def rough_auto_range(delays: NPETData, signal: NDArray[np.bool_]) -> None:
     signal_delays = delays.filter_range(signal)
     sig_width, sig_place = signal_delays.calc_fwhm()
     signal_range = get_signal_xrange(sig_place, sig_width * 3)
-    config.assign_delays(min_del=signal_range[0], max_del=signal_range[1])
+    config.assign_delays(signal_range[0], signal_range[1])
 
 
 def precise_auto_range(sig_place_fs: int, sig_width_fs: int) -> None:
@@ -57,7 +57,7 @@ def precise_auto_range(sig_place_fs: int, sig_width_fs: int) -> None:
     """
     typer.echo("\nAuto-ranging to focus precisely on the calculated signal")
     signal_range = get_signal_xrange(sig_place_fs, sig_width_fs * 4)
-    config.assign_delays(min_del=signal_range[0], max_del=signal_range[1])
+    config.assign_delays(signal_range[0], signal_range[1])
 
 
 def select_data_within_range(data: NPETData) -> NPETData:
