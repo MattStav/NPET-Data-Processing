@@ -8,6 +8,7 @@ from _pytest.monkeypatch import MonkeyPatch
 from NPET_DP.framework.config import config
 from NPET_DP.processing.data_struct import NPETData
 from NPET_DP.workflows.helpers import (
+    precise_auto_range,
     rough_auto_range,
     select_data_within_range,
 )
@@ -47,6 +48,17 @@ def test_rough_auto_range() -> None:
     rough_auto_range(delays, mask)
     assert config.min_delay == -1000
     assert config.max_delay == 4400
+
+
+def test_precise_auto_range() -> None:
+    """Test precise autoranging.
+
+    Test that precise_auto_range sets the config range based directly on the given
+    signal place and width, without any signal detection or FWHM calculation.
+    """
+    precise_auto_range(1000, 100)
+    assert config.min_delay == 400
+    assert config.max_delay == 2800
 
 
 def test_select_data_within_range() -> None:

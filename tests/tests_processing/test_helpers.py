@@ -14,6 +14,7 @@ from NPET_DP.processing.helpers import (
     auto_scale_data,
     auto_scale_num,
     check_data_structure,
+    get_signal_xrange,
     get_unit,
     import_data,
     scale_data,
@@ -216,6 +217,30 @@ def test_get_unit_out_of_range(original_unit: _UNITS_TYPE, scale_iter: int) -> N
     """
     with pytest.raises(ValueError):
         get_unit(original_unit, scale_iter)
+
+
+@pytest.mark.parametrize(
+    "sig_place, sig_width, expected_min, expected_max",
+    (
+        pytest.param(1000, 100, 850, 1450, id="centered_positive"),
+        pytest.param(500, 0, 500, 500, id="zero_width"),
+        pytest.param(-200, 40, -260, -20, id="negative_place"),
+    ),
+)
+def test_get_signal_xrange(
+    sig_place: int,
+    sig_width: float,
+    expected_min: int,
+    expected_max: int,
+) -> None:
+    """Test signal x-range calculation.
+
+    Test that the range is sized to 6x the signal width, positioned so the signal
+    sits 1/4 of the way in from the left edge.
+    """
+    min_delay, max_delay = get_signal_xrange(sig_place, sig_width)
+    assert min_delay == expected_min
+    assert max_delay == expected_max
 
 
 def test_check_data_structure_valid() -> None:
