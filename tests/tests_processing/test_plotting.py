@@ -51,7 +51,8 @@ def test_plot_histogram(
     # Just check if it runs without error and calls plt.show
     mock_plt.hist.return_value = (np.array([1, 1]), np.array([1, 2, 3]), MagicMock())
     # Mock np.exp and np.linspace to return non-empty arrays to avoid division by zero or empty max
-    bin_count = get_bin_count(all_data)
+    spread = all_data.femto.max() - all_data.femto.min()
+    bin_count = get_bin_count(spread)
     with (
         patch(
             "NPET_DP.processing.plotting.np.exp",
@@ -102,7 +103,8 @@ def test_plot_histogram_empty_filtered(
         np.array([100, 200, 300]),
         MagicMock(),
     )
-    bin_count = get_bin_count(all_data)
+    spread = all_data.femto.max() - all_data.femto.min()
+    bin_count = get_bin_count(spread)
     plot_histogram(
         all_data=all_data,
         signal_data=filtered,

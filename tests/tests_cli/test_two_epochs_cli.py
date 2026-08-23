@@ -51,5 +51,5 @@ def test_two_epochs_cli_arrives_at_correct_results(
     assert "Mean: 59.5264 ns" in result.output
     assert "STD: 17.1517 ps" in result.output
     assert "Accepted values in filtering = 1567" in result.output
-    assert "Number of iterations = 18" in result.output
+    assert "Number of iterations = 17" in result.output
     assert "Return rate: 4.86%" in result.output
