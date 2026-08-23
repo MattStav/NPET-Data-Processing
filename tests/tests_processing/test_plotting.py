@@ -44,12 +44,19 @@ def test_plot_histogram(
     mock_auto_scale_data.return_value = (all_data_arr[all_data_arr != 200], 0)
     mock_scale_data.return_value = filtered_arr
     mock_auto_scale_num.side_effect = [
+        (100.0, 0),  # FWHM annotation
         (250.0, 0),  # Mean
         (50.0, 0),  # Std
     ]
     mock_scale_num.return_value = 50.0  # Std correction
     # Just check if it runs without error and calls plt.show
-    mock_plt.hist.return_value = (np.array([1, 1]), np.array([1, 2, 3]), MagicMock())
+    # stacked=True with 2 datasets (signal + background) makes plt.hist return
+    # counts as one row per dataset, so plotting.py's counts[-1] indexing works.
+    mock_plt.hist.return_value = (
+        np.array([[1, 1], [1, 1]]),
+        np.array([1, 2, 3]),
+        MagicMock(),
+    )
     # Mock np.exp and np.linspace to return non-empty arrays to avoid division by zero or empty max
     spread = all_data.femto.max() - all_data.femto.min()
     bin_count = get_bin_count(spread)
@@ -97,9 +104,13 @@ def test_plot_histogram_empty_filtered(
     config.sigma = 2.2
     # scale_data will be called once for non_filtered_data (which is all_data here)
     mock_scale_data.return_value = (all_data_arr, 0)
+    # Used unconditionally for the FWHM annotation, even with no signal data
+    mock_scale_num.return_value = 150.0
     # Just check if it runs without error and calls plt.show
+    # stacked=True with 1 dataset (background only, no signal) still makes plt.hist
+    # return counts as a single row, so plotting.py's counts[-1] indexing works.
     mock_plt.hist.return_value = (
-        np.array([1, 1, 1]),
+        np.array([[1, 1, 1]]),
         np.array([100, 200, 300]),
         MagicMock(),
     )
@@ -113,5 +124,5 @@ def test_plot_histogram_empty_filtered(
     )
     mock_plt.show.assert_called_once()
     mock_plt.savefig.assert_called_once()
-    # Ensure it didn't try to calculate mean/std of empty filtered array
-    mock_scale_num.assert_not_called()
+    # Ensure it didn't try to plot the Gaussian curve for the empty filtered array
+    mock_plt.plot.assert_not_called()
