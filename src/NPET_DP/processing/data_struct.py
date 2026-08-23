@@ -168,11 +168,17 @@ class NPETData(BaseModel):
         )
         return NPETData.from_structured_arr(ret)
 
-    def detect_signal(self) -> tuple[NDArray[np.bool_], ...]:
+    def detect_signal(
+        self,
+        init_thresh: float | None = None,
+    ) -> tuple[NDArray[np.bool_], ...]:
         """Detect signals in the delay data.
 
+        :param init_thresh: Initial threshold for signal detection.
         :return: Boolean masks indicating detected signals.
         """
+        if init_thresh:
+            return detect_signal(self.femto, init_thresh=init_thresh)
         return detect_signal(self.femto)
 
     def calc_fwhm(self) -> tuple[float, int]:

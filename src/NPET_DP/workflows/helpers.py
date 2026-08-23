@@ -124,7 +124,8 @@ def histogram_plot_loop(data: NPETData, name: str) -> NPETData:
             config.prompt_delay("max")
             continue
         # elif "auto"
-        autodetection = selection.detect_signal()
+        signal_percentage: float = len(sigma_data) / len(selection)
+        autodetection = selection.detect_signal(signal_percentage / 2)
         typer.echo(f"\nAutodetection found {len(autodetection)} signals")
         if len(autodetection) != 1:
             typer.secho("Failed to autodetect a single signal!", fg=typer.colors.RED)
