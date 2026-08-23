@@ -81,6 +81,7 @@ def histogram_plot_loop(data: NPETData, name: str) -> NPETData:
     :param name: Name of the file.
     :return: Sigma filtered data, as NPETData object.
     """
+    auto_precise: bool = True
     while True:
         selection: NPETData = select_data_within_range(data)
         # Apply the recursive sigma filter to the data
@@ -97,13 +98,14 @@ def histogram_plot_loop(data: NPETData, name: str) -> NPETData:
         typer.secho(f"Return rate: {ret_rate:.2%}", fg=typer.colors.CYAN)
         # Plot the histogram of the filtered data
         typer.echo("\nPlotting histogram of the measured delays")
-        precise_auto_range(round(sigma_data.mean), round(sigma_data.std))
-        precise_sel = select_data_within_range(data)
-        data_spread: float = precise_sel.femto.max() - precise_sel.femto.min()
+        if auto_precise:
+            precise_auto_range(round(sigma_data.mean), round(sigma_data.std))
+        selection = select_data_within_range(data)
+        data_spread: float = selection.femto.max() - selection.femto.min()
         bin_count = get_bin_count(data_spread, 10_000)
         typer.echo(f"Histogram bin count = {bin_count}")
         plot_histogram(
-            all_data=precise_sel,
+            all_data=selection,
             signal_data=sigma_data if sigma_i != 1 else NPETData.empty(),
             name=name,
             bin_count=bin_count,
@@ -116,7 +118,8 @@ def histogram_plot_loop(data: NPETData, name: str) -> NPETData:
         )
         if redraw == "no":
             break
-        elif redraw == "manual":
+        auto_precise = False
+        if redraw == "manual":
             config.prompt_delay("min", validate=False)
             config.prompt_delay("max")
             continue
@@ -126,6 +129,7 @@ def histogram_plot_loop(data: NPETData, name: str) -> NPETData:
         if len(autodetection) != 1:
             typer.secho("Failed to autodetect a single signal!", fg=typer.colors.RED)
             continue
+        auto_precise = True
         rough_auto_range(selection, autodetection[0])
 
     return sigma_data
