@@ -568,6 +568,52 @@ def test_recursive_sigma_filter_large_dataset() -> None:
     assert iterations > 1
 
 
+def test_recursive_sigma_filter_is_fast_on_good_case_input() -> None:
+    """Performance test for recursive_sigma_filter on well-behaved data.
+
+    Clean, mostly normal data with a small fraction of outliers converges in only
+    a handful of iterations, so this should run much faster than the worst case
+    in test_recursive_sigma_filter_is_fast_on_worst_case_input.
+    """
+    np.random.seed(42)
+    n: int = 200_000
+    clean = np.random.normal(loc=1000, scale=10, size=n).astype(np.int64)
+    outliers = np.random.uniform(low=2000, high=3000, size=n // 100).astype(np.int64)
+    values = np.concatenate([clean, outliers])
+    np.random.shuffle(values)
+    data = np.array(list(zip(range(len(values)), values, strict=True)), dtype=DATA_TYPE)
+
+    start_time = time.perf_counter()
+    filtered, iterations = recursive_sigma_filter(data, sigma_mult=3.0)
+    elapsed = time.perf_counter() - start_time
+
+    assert len(filtered) < len(data), "Outliers should be filtered out"
+    assert iterations < 10, "Clean data should converge in very few iterations"
+    assert elapsed < 0.5, f"recursive_sigma_filter took too long: {elapsed:.3f}s"
+
+
+def test_recursive_sigma_filter_is_fast_on_worst_case_input() -> None:
+    """Performance regression test for recursive_sigma_filter.
+
+    Each iteration is a vectorized O(N) pass, and max_iter bounds the number of
+    passes that can ever run, so the true worst case is max_iter full passes over
+    the data. Heavy-tailed data with a tight sigma_mult never converges within a
+    deliberately small max_iter, deterministically forcing every one of those
+    passes (and the RuntimeError) to run, at a large N.
+    """
+    np.random.seed(1)
+    n: int = 200_000
+    values = (np.random.standard_cauchy(size=n) * 1000).astype(np.int64)
+    data = np.array(list(zip(range(len(values)), values, strict=True)), dtype=DATA_TYPE)
+
+    start_time = time.perf_counter()
+    with pytest.raises(RuntimeError, match="Max iterations reached!"):
+        recursive_sigma_filter(data, sigma_mult=1.0, max_iter=15)
+    elapsed = time.perf_counter() - start_time
+
+    assert elapsed < 2.0, f"recursive_sigma_filter took too long: {elapsed:.3f}s"
+
+
 def test_remove_drift_linear_trend() -> None:
     """Test linear drift removal.
 
