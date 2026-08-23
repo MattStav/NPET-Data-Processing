@@ -1,3 +1,5 @@
+import time
+
 import numpy as np
 import numpy.typing as npt
 import pytest
@@ -262,6 +264,55 @@ def test_calculate_delay_missing_and_out_of_range() -> None:
     assert np.all(delays["femto"][0:4] == 100)
     assert delays["femto"][5] == -100
     assert np.all(delays["femto"][6:13] == 600_100)
+
+
+def test_calculate_delay_is_fast_on_good_case_input() -> None:
+    """Performance test for calculate_delay on well-matched data.
+
+    When every start epoch matches the very next stop epoch (the common case in
+    practice), the inner loop exits after a single check instead of scanning the
+    full `frequency * 2 + 10` window, so this should run much faster than the
+    worst case in test_calculate_delay_is_fast_on_worst_case_input.
+    """
+    n: int = 20_000
+    frequency: int = 100
+    val: int = 100_000_000_000_000
+    data_start = np.array([(i, val) for i in range(n)], dtype=DATA_TYPE)
+    # Constant, well within the searched interval, so every point matches immediately
+    data_stop = np.array([(i, val + 1000) for i in range(n)], dtype=DATA_TYPE)
+
+    start_time = time.perf_counter()
+    delays = calculate_delay(data_start=data_start, data_stop=data_stop, frequency=frequency)
+    elapsed = time.perf_counter() - start_time
+
+    assert len(delays) == n, "Every point should match"
+    assert np.all(delays["femto"] == 1000)
+    assert elapsed < 0.5, f"calculate_delay took too long: {elapsed:.3f}s"
+
+
+def test_calculate_delay_is_fast_on_worst_case_input() -> None:
+    """Performance regression test for calculate_delay.
+
+    The inner loop scans up to `frequency * 2 + 10` stop-side points for every
+    start-side point, so a dataset that never matches forces the full O(N * frequency)
+    worst case. The loop also relies on plain Python lists/ints instead of indexing
+    into numpy structured scalars, which is much slower; this guards against that
+    optimization regressing back.
+    """
+    n: int = 20_000
+    frequency: int = 100
+    val: int = 100_000_000_000_000
+    data_start = np.array([(i, val) for i in range(n)], dtype=DATA_TYPE)
+    # Offset the stop data beyond the searched interval (FEMTO / (2 * frequency))
+    # so no start epoch ever matches, forcing the full worst-case window scan.
+    data_stop = np.array([(i, val + 6_000_000_000_000) for i in range(n)], dtype=DATA_TYPE)
+
+    start_time = time.perf_counter()
+    delays = calculate_delay(data_start=data_start, data_stop=data_stop, frequency=frequency)
+    elapsed = time.perf_counter() - start_time
+
+    assert len(delays) == 0, "Nothing should match given the large offset"
+    assert elapsed < 2.0, f"calculate_delay took too long: {elapsed:.3f}s"
 
 
 def test_detect_signal_single_cluster() -> None:
