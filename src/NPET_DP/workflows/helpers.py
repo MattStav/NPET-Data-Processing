@@ -42,7 +42,7 @@ def rough_auto_range(delays: NPETData, signal: NDArray[np.bool_]) -> None:
     :param delays: Data to be filtered as NPETData object.
     :param signal: Boolean mask indicating the detected signal.
     """
-    typer.echo("\nAuto-ranging to focus roughly on the detected signal")
+    typer.echo("Auto-ranging to focus roughly on the detected signal")
     signal_delays = delays.filter_range(signal)
     sig_width, sig_place = signal_delays.calc_fwhm()
     signal_range = get_signal_xrange(sig_place, sig_width * 3)
@@ -55,7 +55,7 @@ def precise_auto_range(sig_place_fs: int, sig_width_fs: int) -> None:
     :param sig_place_fs: The place of the signal in femtoseconds.
     :param sig_width_fs: The width of the signal in femtoseconds.
     """
-    typer.echo("\nAuto-ranging to focus precisely on the calculated signal")
+    typer.echo("Auto-ranging to focus precisely on the calculated signal")
     signal_range = get_signal_xrange(sig_place_fs, sig_width_fs * 4)
     config.assign_delays(signal_range[0], signal_range[1])
 
@@ -122,7 +122,7 @@ def histogram_plot_loop(data: NPETData, name: str) -> NPETData:
             continue
         # elif "auto"
         autodetection = selection.detect_signal()
-        typer.echo(f"Autodetection found {len(autodetection)} signals")
+        typer.echo(f"\nAutodetection found {len(autodetection)} signals")
         if len(autodetection) != 1:
             typer.secho("Failed to autodetect a single signal!", fg=typer.colors.RED)
             continue
