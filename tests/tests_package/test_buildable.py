@@ -14,7 +14,7 @@ def test_package_buildable(build_result: CompletedProcess, wheel_path: Path) -> 
     """
     ret_code: int = build_result.returncode
     assert ret_code == 0, f"Build failed, exit code: {ret_code!s}"
-    assert wheel_path.iterdir(), "Build generated no files"
+    assert [*wheel_path.iterdir()], "Build generated no files"
 
 
 @pytest.mark.xdist_group(name="package")
