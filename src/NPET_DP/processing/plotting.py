@@ -110,7 +110,7 @@ def plot_histogram(
     hist_colors.append("blue")
     counts, bins, _ = plt.hist(
         hist_data,
-        bins=bins,
+        bins=bins.tolist(),
         color=hist_colors,
         alpha=0.7,
         label=hist_labels,
