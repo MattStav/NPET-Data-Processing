@@ -9,8 +9,8 @@ import pytest
 def test_package_buildable(build_result: CompletedProcess, wheel_path: Path) -> None:
     """Test that the package is buildable.
 
-    The build process should exit with 0 exit code and
-    there should be generated files in the output.
+    The build process should exit with 0 exit code,
+    and there should be generated files in the output.
     """
     ret_code: int = build_result.returncode
     assert ret_code == 0, f"Build failed, exit code: {ret_code!s}"
