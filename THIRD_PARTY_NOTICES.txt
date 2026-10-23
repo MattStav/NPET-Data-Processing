@@ -4946,7 +4946,7 @@ third-party archives.
    limitations under the License.
 
 pillow
-12.3.0
+13.0.0
 MIT-CMU
 The Python Imaging Library (PIL) is
 
