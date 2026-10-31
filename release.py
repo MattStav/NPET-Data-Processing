@@ -22,7 +22,7 @@ def __run_command(cmd: list[str], check: bool = True) -> str:
     :return: The output of the command.
     """
     typer.echo(f"Executing: {' '.join(cmd)}")
-    if not cmd[0] in ("uv", "git"):
+    if cmd[0] not in ("uv", "git"):
         raise ValueError(f"Unexpected command: {' '.join(cmd)}")
     result = subprocess.run(cmd, capture_output=True, text=True, check=check)  # noqa: S603
     return result.stdout.strip()

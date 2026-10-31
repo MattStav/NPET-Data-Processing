@@ -50,7 +50,7 @@ version_scheme = "post-release"
 convention = "pep257"
 
 [tool.ruff.lint]
-extend-select = ["I", "ANN", "D", "S", "N", "C4", "PTH"]
+extend-select = ["I", "ANN", "D", "S", "N", "C4", "PTH", "E"]
 # E501: line too long. Catches comments too, which is pain in the ass.
 # S101: disallow use of assert statements. Asserts are used for type checking.
 # N999: disallow certain names. The package name is in all caps, which is not PEP8 compliant, but it is a proper name of the package.
