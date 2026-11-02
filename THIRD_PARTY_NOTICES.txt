@@ -620,7 +620,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 
 
 certifi
-2025.6.15
+2026.10.18
 Mozilla Public License 2.0 (MPL 2.0)
 This package contains a modified version of ca-bundle.crt:
 
