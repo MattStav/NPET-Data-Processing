@@ -14,57 +14,53 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Install uv
-      uses: astral-sh/setup-uv@v7
-      with:
-        enable-cache: true
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
 
-    - name: Install dependencies
-      run: |
-        uv sync --group dev
+      - name: Test with pytest
+        run: |
+          uv run pytest .\tests\ --junitxml=test-results.xml --cov=src --cov-report=xml --cov-report=html
 
-    - name: Test with pytest
-      run: |
-        uv run pytest tests --junitxml=test-results.xml --cov=src --cov-report=xml --cov-report=html
+      - name: Upload test report
+        uses: actions/upload-artifact@v4
+        with:
+          name: pytest-report
+          path: test-results.xml
 
-    - name: Upload test report
-      uses: actions/upload-artifact@v4
-      with:
-        name: pytest-report
-        path: test-results.xml
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: |
+            coverage.xml
+            htmlcov/
 
-    - name: Upload coverage report
-      uses: actions/upload-artifact@v4
-      with:
-        name: coverage-report
-        path: |
-          coverage.xml
-          htmlcov/
+      - name: Generate coverage badge data
+        if: success()
+        run: |
+          mkdir -p badge
+          PCT=$(python -c "
+          import xml.etree.ElementTree as ET
+          root = ET.parse('coverage.xml').getroot()
+          print(round(float(root.attrib['line-rate']) * 100, 1))
+          ")
+          COLOR=$(python -c "
+          pct = float('$PCT')
+          print('brightgreen' if pct >= 90 else 'green' if pct >= 75 else 'yellow' if pct >= 50 else 'red')
+          ")
+          printf '{"schemaVersion":1,"label":"coverage","message":"%s%%","color":"%s"}' "$PCT" "$COLOR" > badge/coverage-badge.json
 
-    - name: Generate coverage badge data
-      if: success()
-      run: |
-        mkdir -p badge
-        PCT=$(python -c "
-        import xml.etree.ElementTree as ET
-        root = ET.parse('coverage.xml').getroot()
-        print(round(float(root.attrib['line-rate']) * 100, 1))
-        ")
-        COLOR=$(python -c "
-        pct = float('$PCT')
-        print('brightgreen' if pct >= 90 else 'green' if pct >= 75 else 'yellow' if pct >= 50 else 'red')
-        ")
-        printf '{"schemaVersion":1,"label":"coverage","message":"%s%%","color":"%s"}' "$PCT" "$COLOR" > badge/coverage-badge.json
-
-    - name: Publish coverage badge
-      if: success() && github.event_name == 'push'
-      uses: peaceiris/actions-gh-pages@v4
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: badge
-        publish_branch: badges
-        keep_files: false
-        user_name: 'github-actions[bot]'
-        user_email: 'github-actions[bot]@users.noreply.github.com'
+      - name: Publish coverage badge
+        if: success() && github.event_name == 'push'
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: badge
+          publish_branch: badges
+          keep_files: false
+          user_name: 'github-actions[bot]'
+          user_email: 'github-actions[bot]@users.noreply.github.com'
