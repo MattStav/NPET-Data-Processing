@@ -38,7 +38,7 @@ jobs:
 
       - name: Generate license report
         run: |
-          py=$(uv run python -c "import sys; print(sys.executable)")
+          py=$(uv run --no-dev python -c "import sys; print(sys.executable)")
           uv run --no-dev -w pip-licenses pip-licenses --python "$py" \
           --format=plain-vertical \
           --with-license-file \
