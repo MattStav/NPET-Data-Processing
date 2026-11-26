@@ -129,10 +129,10 @@ def test_is_continuous_bigger_step(data: NDArray, step: int) -> None:
     ],
 )
 def test_discard_rows_until_first_col_match(
-        ref_rows: list[tuple[int, int]],
-        mismatch_rows: list[tuple[int, int]],
-        expected_rows: list[tuple[int, int]],
-        expected_discarded: int,
+    ref_rows: list[tuple[int, int]],
+    mismatch_rows: list[tuple[int, int]],
+    expected_rows: list[tuple[int, int]],
+    expected_discarded: int,
 ) -> None:
     """Test that data matching discard correct rows.
 
@@ -151,7 +151,7 @@ def test_discard_rows_until_first_col_match(
 
 
 def test_discard_rows_until_first_col_match_returns_full_tail_from_match_point() -> (
-        None
+    None
 ):
     """Discard does NOT touch matching data.
 
@@ -481,12 +481,12 @@ def test_detect_signal_discards_small_final_signals() -> None:
     ],
 )
 def test_interp_crossing(
-        x1: float,
-        x2: float,
-        y1: float,
-        y2: float,
-        y_target: float,
-        expected_x: float,
+    x1: float,
+    x2: float,
+    y1: float,
+    y2: float,
+    y_target: float,
+    expected_x: float,
 ) -> None:
     """Test that interp_crossing finds the correct linear interpolation point."""
     assert np.isclose(interp_crossing(x1, x2, y1, y2, y_target), expected_x)
@@ -508,23 +508,23 @@ def test_interp_crossing_extrapolates_outside_range() -> None:
         (100_000, 10_000, 10),  # default-sized spread: uses target_bin_size_fs directly
         (25_000, 10_000, 2),  # not evenly divisible -> floors down
         (
-                50_000_000,
-                10_000,
-                5000,
+            50_000_000,
+            10_000,
+            5000,
         ),  # exactly at the threshold -> still uses target_bin_size_fs
         (
-                100_000_000,
-                10_000,
-                1000,
+            100_000_000,
+            10_000,
+            1000,
         ),  # above threshold -> bin size scales to fit 1000 bins
         (50_000, 5_000, 10),  # custom target_bin_size_fs
         (0, 10_000, 1),  # empty spread
     ],
 )
 def test_get_bin_count(
-        data_spread: float,
-        target_bin_size_fs: int,
-        expected_bin_count: int,
+    data_spread: float,
+    target_bin_size_fs: int,
+    expected_bin_count: int,
 ) -> None:
     """Test that get_bin_count computes the expected number of histogram bins.
 
@@ -542,7 +542,7 @@ def test_get_fwhm_single_peak() -> None:
     matches the interpolated half-max crossing points.
     """
     values = (
-            [0, 10000, 20000, 30000] + [45000] * 50 + [50000, 60000, 70000, 80000, 90000]
+        [0, 10000, 20000, 30000] + [45000] * 50 + [50000, 60000, 70000, 80000, 90000]
     )
     data = _structured_data(values)
     fwhm, peak_place = calc_fwhm(data)
@@ -557,10 +557,10 @@ def test_get_fwhm_center_uses_highest_bin_not_crossing_midpoint() -> None:
     crossing points would land off the peak bin; the center of the highest bin should not.
     """
     values = (
-            [0, 10000, 20000, 30000]
-            + [45000] * 50
-            + [55000] * 20
-            + [60000, 70000, 80000, 90000]
+        [0, 10000, 20000, 30000]
+        + [45000] * 50
+        + [55000] * 20
+        + [60000, 70000, 80000, 90000]
     )
     data = _structured_data(values)
     fwhm, peak_place = calc_fwhm(data)
@@ -703,7 +703,7 @@ def test_remove_drift_quadratic_trend() -> None:
     A quadratic trend should be fully removed, leaving ~0 residuals.
     """
     time_data = np.arange(20)
-    values = time_data ** 2 - 3 * time_data + 5
+    values = time_data**2 - 3 * time_data + 5
     data = np.array(list(zip(time_data, values, strict=True)), dtype=DATA_TYPE)
     residuals = remove_drift(data, 2)["femto"]
     assert np.allclose(residuals, 0, atol=1e-6)
@@ -745,7 +745,7 @@ def test_remove_drift_custom_degree_leaves_unmodeled_component() -> None:
     Fitting a lower degree than the data's actual trend should leave a residual curve.
     """
     time_data = np.arange(20)
-    values = time_data ** 2
+    values = time_data**2
     data = np.array(list(zip(time_data, values, strict=True)), dtype=DATA_TYPE)
     residuals = remove_drift(data, deg=1)["femto"]
     assert not np.allclose(residuals, 0, atol=1e-3)
