@@ -36,13 +36,10 @@ jobs:
         with:
           enable-cache: true
 
-      - name: Install runtime dependencies
-        run: uv sync --no-dev
-
       - name: Generate license report
         run: |
           py=$(uv run python -c "import sys; print(sys.executable)")
-          uvx pip-licenses --python "$py" \
+          uv run --no-dev -w pip-licenses pip-licenses --python "$py" \
           --format=plain-vertical \
           --with-license-file \
           --ignore-packages=NPET_DP \
